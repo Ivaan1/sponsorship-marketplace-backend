@@ -1,0 +1,9 @@
+### Crear Usuario
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "Ivan",
+    "email": "ivan@gmail.com",
+    "password": "123455"
+}
