@@ -1,16 +1,21 @@
-const dbConnect = require('./config/mongo')
-require('dotenv').config();
-const express = require("express")
+require('dotenv').config(); // Siempre lo primero
+const express = require("express");
+const cors = require("cors");
+const dbConnect = require('./config/mongo');
 
-const app = express()
+const app = express();
 
-app.use(express.json())
+//MIDDLEWARES GLOBALES
+app.use(cors());
+app.use(express.json());
 
-//app.use("/api", require("./routes")) //Lee routes/index.js por defecto
+// CARGA DE RUTAS
+app.use("/api", require("./routes")); // Lee routes/index.js
 
-const port = process.env.PORT || 3000
+// PUERTO Y ARRANQUE
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-    console.log("Servidor escuchando en el puerto " + port)
+    console.log("Servidor corriendo en http://localhost:" + port);
     dbConnect();
-})
+});
