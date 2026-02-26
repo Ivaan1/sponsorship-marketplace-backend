@@ -1,6 +1,6 @@
 // este controlador se encarga de manejar la autenticación de los usuarios, incluyendo el inicio de sesión y el registro.
 const { handleHttpError } = require('../utils/handleErrors');
-const usersModel = require("../models/nosql/user");
+const { usersModel } = require('../models');
 const { tokenSign } = require('../utils/handleJWT.js');
 
 //solo para pruebas, luego se eliminará 
