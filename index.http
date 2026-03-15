@@ -1,9 +1,29 @@
-### Crear Usuario
+### Registro Sponsor
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-    "name": "Ivan",
+    "name": "Ivan Martinez",
     "email": "ivan@gmail.com",
-    "password": "123455"
+    "password": "123455",
+    "role": "sponsor",
+    "sponsorProfile": {
+        "companyName": "Nike España",
+        "industry": "sports",
+        "budget": {
+            "min": 5000,
+            "max": 20000
+        },
+        "preferences": {
+            "eventTypes": ["concert", "festival", "sports"],
+            "targetAudience": {
+                "ageRange": {
+                    "min": 18,
+                    "max": 35
+                },
+                "location": "Madrid",
+                "interests": ["running", "fitness", "lifestyle"]
+            }
+        }
+    }
 }
