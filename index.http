@@ -27,3 +27,144 @@ Content-Type: application/json
         }
     }
 }
+
+
+### Crear Evento Single (Presencial)
+POST http://localhost:5000/api/events
+Content-Type: application/json
+
+{
+    "organizer": "664f1b2e9f1b2c3d4e5f6a7b",
+    "name": "Madrid Music Festival 2025",
+    "summary": "El festival de música más grande de Madrid con artistas internacionales.",
+    "introduction": "## Bienvenidos\nUna noche inolvidable con los mejores artistas...",
+    "eventType": "single",
+    "singleDate": {
+        "startTime": "2025-07-15T18:00:00.000Z",
+        "endTime": "2025-07-15T23:59:00.000Z"
+    },
+    "media": {
+        "images": [
+            { "url": "https://storage.com/event1.jpg", "size": 2048000, "format": "jpeg" },
+            { "url": "https://storage.com/event2.jpg", "size": 1500000, "format": "png" }
+        ],
+        "video": {
+            "url": "https://storage.com/promo.mp4",
+            "format": "mp4",
+            "duration": 45,
+            "resolution": "1080p"
+        }
+    },
+    "location": {
+        "type": "venue",
+        "venue": {
+            "name": "WiZink Center",
+            "address1": "Av. de Felipe II, s/n",
+            "address2": "",
+            "city": "Madrid",
+            "state": "Comunidad de Madrid",
+            "zipCode": "28009",
+            "country": "España"
+        }
+    },
+    "usefulInfo": {
+        "highlights": {
+            "ageRestriction": "+16",
+            "parking": "paid"
+        },
+        "faq": [
+            { "question": "¿Se puede entrar con cámara?", "answer": "Solo cámaras de uso personal." },
+            { "question": "¿Hay guardarropa?", "answer": "Sí, al precio de 3€." }
+        ]
+    },
+    "cast": [
+        {
+            "name": "Bad Bunny",
+            "description": "Artista urbano puertorriqueño",
+            "isHeadliner": true,
+            "image": "https://storage.com/badbunny.jpg",
+            "socialLinks": {
+                "instagram": "https://instagram.com/badbunny",
+                "twitter": "https://twitter.com/badbunny"
+            }
+        },
+        {
+            "name": "Rosalía",
+            "description": "Artista española de flamenco urbano",
+            "isHeadliner": false,
+            "image": "https://storage.com/rosalia.jpg"
+        }
+    ],
+    "agenda": [[
+        {
+            "title": "Apertura de puertas",
+            "startTime": "2025-07-15T18:00:00.000Z",
+            "endTime": "2025-07-15T19:00:00.000Z"
+        },
+        {
+            "title": "Actuación Rosalía",
+            "startTime": "2025-07-15T19:30:00.000Z",
+            "endTime": "2025-07-15T21:00:00.000Z",
+            "hostOrArtist": "Rosalía",
+            "description": "Set de 90 minutos con canciones de Motomami"
+        },
+        {
+            "title": "Actuación Bad Bunny",
+            "startTime": "2025-07-15T21:30:00.000Z",
+            "endTime": "2025-07-15T23:30:00.000Z",
+            "hostOrArtist": "Bad Bunny",
+            "description": "Show principal de la noche"
+        }
+    ]],
+    "tickets": [
+        {
+            "name": "Entrada General",
+            "type": "paid",
+            "price": 65,
+            "availableQuantity": 5000,
+            "saleEnds": {
+                "reference": "before_start",
+                "amount": 2,
+                "unit": "hours"
+            },
+            "advanced": {
+                "visibility": "public",
+                "ticketsPerOrder": 6,
+                "delivery": { "online": true, "door": true },
+                "electronicTicket": true,
+                "inPersonPickup": false
+            }
+        },
+        {
+            "name": "VIP",
+            "type": "paid",
+            "price": 150,
+            "availableQuantity": 500,
+            "saleEnds": {
+                "reference": "before_event",
+                "amount": 1,
+                "unit": "days"
+            },
+            "advanced": {
+                "description": "Acceso a zona VIP con barra libre",
+                "visibility": "public",
+                "ticketsPerOrder": 4,
+                "delivery": { "online": true, "door": false },
+                "electronicTicket": true,
+                "inPersonPickup": false
+            }
+        }
+    ],
+    "sponsorship": {
+        "isLookingForSponsors": true,
+        "budget": { "min": 5000, "max": 25000 },
+        "targetAudience": {
+            "ageRange": { "min": 16, "max": 35 },
+            "interests": ["música", "festivales", "lifestyle"],
+            "expectedAttendees": 5500
+        },
+        "perks": ["Logo en banner principal", "Stand propio", "Mención en redes sociales", "Entradas VIP"],
+        "category": "concert"
+    },
+    "status": "published"
+}
