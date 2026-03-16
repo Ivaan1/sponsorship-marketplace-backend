@@ -3,29 +3,29 @@ POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-    "name": "Ivan Martinez",
-    "email": "ivan@gmail.com",
-    "password": "123455",
+    "name": "Juan Pérez",
+    "email": "juan@empresa.com",
+    "password": "passwordSeguro123",
     "role": "sponsor",
     "sponsorProfile": {
-        "companyName": "Nike España",
-        "industry": "sports",
+        "companyName": "Tech Solutions SL",
+        "industry": "tech",
         "budget": {
-            "min": 5000,
-            "max": 20000
+        "min": 1000,
+        "max": 5000
         },
         "preferences": {
-            "eventTypes": ["concert", "festival", "sports"],
+            "eventTypes": ["conference", "networking"],
             "targetAudience": {
-                "ageRange": {
-                    "min": 18,
-                    "max": 35
-                },
-                "location": "Madrid",
-                "interests": ["running", "fitness", "lifestyle"]
-            }
-        }
+            "ageRange": {
+                "min": 18,
+                "max": 40
+            },
+            "location": "Madrid",
+            "interests": ["software", "ai", "startups"]
+      }
     }
+  }
 }
 
 
