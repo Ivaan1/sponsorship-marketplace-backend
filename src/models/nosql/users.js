@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["sponsor", "organizer"],
+      enum: ["sponsor", "creator"],
       required: true,
     },
 
@@ -47,12 +47,14 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Solo relevante si role === "organizer"
-    organizerProfile: {
+    /* 
+    Analizar mas adelante...
+    creatorProfile: {
       organization: { type: String },
       website: { type: String },
       eventsHosted: { type: Number, default: 0 },
     },
+    */
 
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
