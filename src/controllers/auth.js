@@ -15,6 +15,24 @@ async function createUser(req, res) {
     }
 }
 
+async function registerUser(req, res) {
+    try {
+        const { password: rawPassword, ...rest } = matchedData(req)
+        const password = await encrypt(rawPassword)
+
+        const user = await usersModel.create({ ...rest, password })
+
+        res.status(201).json({
+            token: tokenSign(user),
+            user,
+        })
+
+    } catch (error) {
+        console.error('Error registrando el usuario:', error)
+        handleHttpError(res, error)
+    }
+}
 module.exports = {
-    createUser,
+    createUser, 
+    registerUser,
 }
