@@ -13,6 +13,13 @@ async function createEvent(req, res) { // solo para pruebas, luego se eliminará
     }   
 }
 
+const getEvent = async (req, res) => {
+  const event = await eventsModel.find();
+  res.json(event);
+};
+
+
 module.exports = {
     createEvent,
+    getEvent
 }
