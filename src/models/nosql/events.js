@@ -5,14 +5,14 @@ const mongoose = require("mongoose");
 const mediaSchema = new mongoose.Schema({
   images: [{
     url: { type: String },
-    size: { type: Number }, // en bytes
+    size: { type: Number },
     format: { type: String, enum: ["jpeg", "png"] }
   }],
   video: {
     url: { type: String },
     format: { type: String, enum: ["mp4", "mov"] },
-    duration: { type: Number }, // en segundos, max 60
-    resolution: { type: String } // ej: "1080p"
+    duration: { type: Number },
+    resolution: { type: String }
   }
 });
 
@@ -27,16 +27,16 @@ const recurrenceSchema = new mongoose.Schema({
     enum: ["once", "daily", "weekly", "monthly"],
     required: true,
   },
-  until: { type: Date },           // fecha fin de recurrencia
-  dayOfWeek: { type: String },     // ej: "wednesday" si es weekly
-  dayOfMonth: { type: Number },    // ej: 5 si es mensual el día 5
-  schedules: [scheduleSchema],     // lista de bloques horarios
+  until: { type: Date },
+  dayOfWeek: { type: String },
+  dayOfMonth: { type: Number },
+  schedules: [scheduleSchema],
 });
 
 const locationSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ["venue", "online", "tba"], // tba = to be announced
+    enum: ["venue", "online", "tba"],
     required: true,
   },
   venue: {
@@ -52,7 +52,7 @@ const locationSchema = new mongoose.Schema({
 });
 
 const castMemberSchema = new mongoose.Schema({
-  image: { type: String },         // 320x320px
+  image: { type: String },
   name: { type: String, required: true },
   description: { type: String },
   isHeadliner: { type: Boolean, default: false },
@@ -112,7 +112,7 @@ const eventSchema = new mongoose.Schema(
     // Básico
     name: { type: String, required: true, trim: true },
     summary: { type: String, maxlength: 140 },
-    introduction: { type: String }, // markdown/rich text
+    introduction: { type: String },
 
     // Media
     media: { type: mediaSchema },
@@ -123,8 +123,8 @@ const eventSchema = new mongoose.Schema(
       enum: ["single", "recurring"],
       required: true,
     },
-    singleDate: { type: scheduleSchema },   // si eventType === "single"
-    recurrence: { type: recurrenceSchema }, // si eventType === "recurring"
+    singleDate: { type: scheduleSchema },
+    recurrence: { type: recurrenceSchema },
 
     // Ubicación
     location: { type: locationSchema, required: true },
@@ -152,18 +152,49 @@ const eventSchema = new mongoose.Schema(
     cast: [castMemberSchema],
 
     // Agenda
-    agenda: [[agendaItemSchema]], // array de arrays para múltiples fechas
+    agenda: [[agendaItemSchema]],
 
     // Entradas
     tickets: [ticketSchema],
 
-    // Nuestros campos para el marketplace de sponsors
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARKETPLACE DE SPONSORS
+    // ─────────────────────────────────────────────────────────────────────────
     sponsorship: {
+
       isLookingForSponsors: { type: Boolean, default: false },
+
+      // ── Categoría ─────────────────────────────────────────────────────────
+      // Incluye valores nuevos (alineados con UI) + valores legacy de la BD
+      // para no romper documentos existentes.
+      category: {
+        type: String,
+        enum: [
+          // ── Valores nuevos (UI) ──
+          "music",          // Música
+          "technology",     // Tecnología
+          "gastronomy",     // Gastronomía
+          "culture",        // Cultura
+          "business",       // Negocios
+          "health",         // Salud
+          "education",      // Educación
+          "entertainment",  // Entretenimiento
+          "concert",        // → mapear a "music" en el front
+          "conference",     // → mapear a "technology" o "business"
+          "festival",       // → mapear a "entertainment"
+          "sports",         // → mapear a "health"
+          "networking",     // → mapear a "business"
+          "other",
+        ],
+      },
+
+      // ── Presupuesto → filtro "Presupuesto" ────────────────────────────────
       budget: {
         min: { type: Number },
         max: { type: Number },
       },
+
+      // ── Audiencia → filtro "Público" y "Alcance" ──────────────────────────
       targetAudience: {
         ageRange: {
           min: { type: Number },
@@ -172,14 +203,50 @@ const eventSchema = new mongoose.Schema(
         interests: [{ type: String }],
         expectedAttendees: { type: Number },
       },
-      perks: [{ type: String }], // ej: ["logo en banner", "stand propio", "mención en redes"]
-      category: {
+
+      // ── Beneficios → tarjeta "#Visibilidad para la marca" ─────────────────
+      perks: [{ type: String }],
+
+      // ── Nivel de patrocinio → filtro "Nivel" ──────────────────────────────
+      // NUEVO — opcional, no rompe documentos sin este campo
+      sponsorshipLevel: {
         type: String,
-        enum: ["concert", "conference", "festival", "sports", "networking", "other"],
+        enum: ["title", "gold", "silver", "bronze", "community"],
       },
+
+      // ── Alcance digital → tarjeta "#Alcance digital del evento" ───────────
+      // NUEVO — opcional
+      digitalReach: {
+        estimatedOnlineViewers: { type: Number },
+        streamingPlatforms: [{ type: String }],
+        socialMediaImpressions: { type: Number },
+        hasLivestream: { type: Boolean, default: false },
+      },
+
+      // ── Patrocinadores anteriores → tarjeta "#Patrocinadores anteriores" ──
+      // NUEVO — opcional
+      previousSponsors: [{
+        name: { type: String },
+        logoUrl: { type: String },
+        year: { type: Number },
+      }],
+
+      // ── Estado del patrocinio → filtro "Estado" ───────────────────────────
+      // NUEVO — opcional, default "open"
+      sponsorshipStatus: {
+        type: String,
+        enum: ["open", "closed", "in_negotiation"],
+        default: "open",
+      },
+
+      // ── Solicitudes de sponsors ───────────────────────────────────────────
       sponsorsApplied: [{
         sponsor: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-        status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
+        status: {
+          type: String,
+          enum: ["pending", "accepted", "rejected"],
+          default: "pending",
+        },
         message: { type: String },
         appliedAt: { type: Date, default: Date.now },
       }],
@@ -194,4 +261,4 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("events", eventSchema); 
+module.exports = mongoose.model("events", eventSchema);
