@@ -46,4 +46,30 @@ const getUserByName = async (req, res) => {
   }
 };
 
-module.exports = { getUsers,getUserById,getUserByName };
+const updateOnboarding = async (req, res) => {
+    try {
+        const userId = req.user._id
+        const data = req.body
+
+        const updatedUser = await usersModel.findByIdAndUpdate(
+            userId,
+            { ...data, onboardingCompleted: true },
+            { 
+                returnDocument: 'after', 
+                runValidators: true   
+            }   
+        ).select('-password')
+
+        if (!updatedUser) {
+            return handleHttpError(res, 'USER_NOT_FOUND', 404)
+        }
+
+        res.status(200).json({ user: updatedUser })
+
+    } catch (error) {
+        console.error('Error actualizando onboarding:', error)
+        handleHttpError(res, 'ERROR_UPDATING_ONBOARDING', 500)
+    }
+}
+
+module.exports = { getUsers, getUserById, getUserByName, updateOnboarding };
