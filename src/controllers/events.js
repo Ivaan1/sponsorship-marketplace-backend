@@ -168,7 +168,7 @@ const getEventByName = async (req, res) => {
 
 module.exports = {
     createEvent,
-    getEvent,
+    getEvents,
     getEventById,
     getEventByName
 }
