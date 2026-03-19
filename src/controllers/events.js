@@ -149,4 +149,26 @@ async function createEvent(req, res) {
     }
 }
 
-module.exports = { getEvents, getEventById, createEvent }
+
+const getEventByName = async (req, res) => {
+  try {
+    const { name } = req.params;
+    const event = await eventsModel.findOne({ name });
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+    
+    res.json(event);
+  } catch (error) {
+    handleHttpError(res, error);
+  }
+};
+
+
+module.exports = {
+    createEvent,
+    getEvent,
+    getEventById,
+    getEventByName
+}
