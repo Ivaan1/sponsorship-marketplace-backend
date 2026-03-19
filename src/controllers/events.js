@@ -18,8 +18,40 @@ const getEvent = async (req, res) => {
   res.json(event);
 };
 
+const getEventById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await eventsModel.findById(id);
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+    
+    res.json(event);
+  } catch (error) {
+    handleHttpError(res, error);
+  }
+};
+
+const getEventByName = async (req, res) => {
+  try {
+    const { name } = req.params;
+    const event = await eventsModel.findOne({ name });
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+    
+    res.json(event);
+  } catch (error) {
+    handleHttpError(res, error);
+  }
+};
+
 
 module.exports = {
     createEvent,
-    getEvent
+    getEvent,
+    getEventById,
+    getEventByName
 }
