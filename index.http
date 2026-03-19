@@ -168,3 +168,29 @@ Content-Type: application/json
     },
     "status": "published"
 }
+
+###
+GET http://localhost:3000/api/users
+
+###
+
+GET http://localhost:3000/api/events
+
+###
+
+GET http://localhost:3000/api/events/name/Madrid%20Music%20Festival%202025
+
+###
+
+GET http://localhost:3000/api/events/id/69b897b503af7de65b98fef3
+
+###
+
+GET http://localhost:3000/api/users/name/Ivan
+
+###
+
+GET http://localhost:3000/api/users/Id/69b6d90420e2de4f51f3fd1d
+
+###
+
