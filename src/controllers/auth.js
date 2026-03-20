@@ -2,7 +2,7 @@
 const { handleHttpError } = require('../utils/handleErrors');
 const { usersModel } = require('../models');
 const { tokenSign } = require('../utils/handleJWT.js');
-const { encrypt } = require('../utils/handlePassword');
+const { encrypt, compare } = require('../utils/handlePassword');
 
 //solo para pruebas, luego se eliminará 
 async function createUser(req, res) {
@@ -39,7 +39,39 @@ async function registerUser(req, res) {
     }
 }
 
+async function loginUser(req, res) {
+    try {
+        const { email, password } = req.body;
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+
+        const user = await usersModel.findOne({ email: normalizedEmail });
+        if (!user) {
+            return handleHttpError(res, 'USER_NOT_FOUND', 404);
+        }
+
+        const checkPassword = await compare(password, user.password);
+        if (!checkPassword) {
+            return handleHttpError(res, 'INVALID_PASSWORD', 401);
+        }
+
+        const userFiltered = {
+            email: user.email,
+            role: user.role
+        };
+
+        res.status(200).json({
+            token: await tokenSign(user),
+            user: userFiltered
+        });
+
+    } catch (error) {
+        console.error('Error logueando el usuario:', error);
+        handleHttpError(res, 'ERROR_LOGIN_USER', 500);
+    }
+}
+
 module.exports = {
     createUser, 
     registerUser,
+    loginUser
 }
