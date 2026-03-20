@@ -1,6 +1,6 @@
 const models = {
-    usersModel: require('./nosql/user'),
-    eventsModel: require('./nosql/event'),
+    usersModel: require('./nosql/users'),
+    eventsModel: require('./nosql/events'),
 }
 
 module.exports = models

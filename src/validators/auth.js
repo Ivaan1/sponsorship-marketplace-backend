@@ -1,20 +1,16 @@
-const { check } = require("express-validator")
-const validateResults = require("../utils/handleValidator")
+const { z } = require("zod");
 
- const validatorRegister = [
-    check("email")
-    .exists().withMessage("El correo es obligatorio.")
-    .notEmpty().withMessage("El correo no puede estar vacío.")
-    .isEmail().withMessage("El correo no tiene un formato válido."),
-    check("password")
-    .exists().withMessage("La contraseña es obligatoria.")
-    .notEmpty().withMessage("La contraseña no puede estar vacía.")
-    .isLength({ min: 8, max: 16 }).withMessage("La contraseña debe tener entre 8 y 16 caracteres."),
-  
-     (req, res, next) => {
-         return validateResults(req, res, next)
-    }
- ]
+const registerSchema = z.object({
+  email: z.string().email("Email inválido").trim().toLowerCase(),
+  password: z.string().min(8, "Mínimo 8 caracteres"),
+  role: z.enum(["sponsor", "creator"], {
+    errorMap: () => ({ message: "El rol debe ser sponsor o creator" }),
+  }),
+});
 
- 
-module.exports = { validatorRegister}
+const loginSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(1, "La contraseña es obligatoria"),
+});
+
+module.exports = { registerSchema, loginSchema };
