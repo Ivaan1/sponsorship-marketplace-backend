@@ -42,8 +42,9 @@ async function registerUser(req, res) {
 async function loginUser(req, res) {
     try {
         const { email, password } = req.body;
-        
-        const user = await usersModel.findOne({ email });
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+
+        const user = await usersModel.findOne({ email: normalizedEmail });
         if (!user) {
             return handleHttpError(res, 'USER_NOT_FOUND', 404);
         }
