@@ -15,7 +15,13 @@ router.post('/', createEvent)
 // Detalle de evento
 // GET /api/events/:id
 router.get('/:id', getEventById)
- 
+
+/**
+ * @deprecated
+ * @description Busca un evento por su nombre exacto.
+ * @reason Obsoleto. Utilizar el endpoint principal `GET /api/events?q=nombre` 
+ * que incluye el motor de búsqueda con ranking de relevancia.
+ */
 router.get('/name/:name',getEventByName);
 
 module.exports = router;

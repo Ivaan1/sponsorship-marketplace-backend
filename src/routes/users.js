@@ -9,6 +9,10 @@ const { sponsorOnboardingSchema, creatorOnboardingSchema } = require('../validat
 
 router.get('/', getUsers);
 
+/**
+ * @deprecated Este endpoint se eliminará en la versión 2.0. 
+ * Usar GET /api/events con query params en su lugar.
+ */
 router.get('/name/:name',getUserByName);
 
 router.get('/id/:id',getUserById);
