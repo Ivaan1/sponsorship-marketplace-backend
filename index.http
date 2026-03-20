@@ -1,5 +1,9 @@
+### ─────────────────────────────────────────────
+### AUTH
+### ─────────────────────────────────────────────
+
 ### Registro Sponsor
-POST http://localhost:5000/api/auth/register
+POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
@@ -11,26 +15,103 @@ Content-Type: application/json
         "companyName": "Tech Solutions SL",
         "industry": "tech",
         "budget": {
-        "min": 1000,
-        "max": 5000
+            "min": 1000,
+            "max": 5000
         },
         "preferences": {
             "eventTypes": ["conference", "networking"],
             "targetAudience": {
-            "ageRange": {
-                "min": 18,
-                "max": 40
-            },
-            "location": "Madrid",
-            "interests": ["software", "ai", "startups"]
-      }
+                "ageRange": {
+                    "min": 18,
+                    "max": 40
+                },
+                "location": "Madrid",
+                "interests": ["software", "ai", "startups"]
+            }
+        }
     }
-  }
 }
 
 
-### Crear Evento Single (Presencial)
-POST http://localhost:5000/api/events
+### ─────────────────────────────────────────────
+### EVENTOS — Lectura
+### ─────────────────────────────────────────────
+
+### Obtener todos los eventos
+GET http://localhost:3000/api/events
+
+###
+
+### Buscar por texto
+GET http://localhost:3000/api/events?q=madrid
+
+###
+
+### Filtrar por categoría
+GET http://localhost:3000/api/events?category=concert
+
+###
+
+### Filtrar por presupuesto
+GET http://localhost:3000/api/events?minBudget=1000&maxBudget=10000
+
+###
+
+### Filtrar por público (edad)
+GET http://localhost:3000/api/events?minAge=16&maxAge=35
+
+###
+
+### Filtrar por nivel de patrocinio
+GET http://localhost:3000/api/events?level=gold
+
+###
+
+### Filtrar por estado del patrocinio
+GET http://localhost:3000/api/events?sponsorshipStatus=open
+
+###
+
+### Filtrar por alcance (asistentes)
+GET http://localhost:3000/api/events?minReach=1000&maxReach=10000
+
+###
+
+### Ordenar por asistentes
+GET http://localhost:3000/api/events?sortBy=attendees
+
+###
+
+### Ordenar por presupuesto ascendente
+GET http://localhost:3000/api/events?sortBy=budgetAsc
+
+###
+
+### Ordenar por presupuesto descendente
+GET http://localhost:3000/api/events?sortBy=budgetDesc
+
+###
+
+### Paginación
+GET http://localhost:3000/api/events?page=1&limit=5
+
+###
+
+### Combinación de filtros
+GET http://localhost:3000/api/events?category=concert&minBudget=5000&sortBy=relevance&page=1&limit=10
+
+###
+
+### Obtener evento por ID
+GET http://localhost:3000/api/events/69b88e4aa185eb851b8b574a
+
+
+### ─────────────────────────────────────────────
+### EVENTOS — Escritura
+### ─────────────────────────────────────────────
+
+### Crear evento completo
+POST http://localhost:3000/api/events
 Content-Type: application/json
 
 {
@@ -157,19 +238,47 @@ Content-Type: application/json
     ],
     "sponsorship": {
         "isLookingForSponsors": true,
+        "category": "concert",
+        "sponsorshipStatus": "open",
+        "sponsorshipLevel": "gold",
         "budget": { "min": 5000, "max": 25000 },
         "targetAudience": {
             "ageRange": { "min": 16, "max": 35 },
             "interests": ["música", "festivales", "lifestyle"],
             "expectedAttendees": 5500
         },
-        "perks": ["Logo en banner principal", "Stand propio", "Mención en redes sociales", "Entradas VIP"],
-        "category": "concert"
+        "digitalReach": {
+            "estimatedOnlineViewers": 8000,
+            "streamingPlatforms": ["YouTube", "Instagram"],
+            "socialMediaImpressions": 120000,
+            "hasLivestream": true
+        },
+        "previousSponsors": [
+            { "name": "Coca-Cola", "year": 2024 },
+            { "name": "Nike", "year": 2023 }
+        ],
+        "perks": ["Logo en banner principal", "Stand propio", "Mención en redes sociales", "Entradas VIP"]
     },
     "status": "published"
 }
 
 ###
+
+### Editar evento
+PUT http://localhost:3000/api/events/69b88e4aa185eb851b8b574a
+Content-Type: application/json
+
+{
+    "sponsorship": {
+        "budget": { "min": 3000, "max": 15000 },
+        "sponsorshipStatus": "in_negotiation"
+    }
+}
+
+###
+
+### Eliminar evento
+DELETE http://localhost:3000/api/events/69b88e4aa185eb851b8b574a
 GET http://localhost:3000/api/users
 
 ###
