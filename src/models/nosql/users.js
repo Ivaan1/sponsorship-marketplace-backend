@@ -30,6 +30,23 @@ const userSchema = new mongoose.Schema(
         type: String,
         enum: ["tech", "food", "fashion", "sports", "music", "finance", "health", "other"],
       },
+      companySize: {
+        type: String,
+        enum: ["startup", "pyme", "enterprise"],
+      },
+      sponsorshipObjective: {
+        type: String,
+        enum: ["brand_awareness", "lead_generation", "pr_networking", "csr"],
+      },
+      contributionType: {
+        type: String,
+        enum: ["money", "services", "in_kind", "mixed"],
+      },
+      geographicScope: {
+        type: String,
+        enum: ["local", "regional", "national", "international"],
+      },
+      brandValues: [{ type: String }],
       budget: {
         min: { type: Number },
         max: { type: Number },
