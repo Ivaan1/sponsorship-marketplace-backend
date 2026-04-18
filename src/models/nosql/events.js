@@ -206,6 +206,19 @@ const eventSchema = new mongoose.Schema(
 
       // ── Beneficios → tarjeta "#Visibilidad para la marca" ─────────────────
       perks: [{ type: String }],
+      collaborationTypes: [{ 
+        type: String, 
+        enum: ["financial", "services", "brand_collaboration", "other"] // Valores internos para esos botones
+      }],
+      pitch: { 
+        type: String,
+        trim: true
+      },
+      socialLinks: {
+        whatsapp: { type: String, trim: true },
+        instagram: { type: String, trim: true },
+        youtube: { type: String, trim: true },
+      },
 
       // ── Nivel de patrocinio → filtro "Nivel" ──────────────────────────────
       // NUEVO — opcional, no rompe documentos sin este campo
