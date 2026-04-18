@@ -27,9 +27,14 @@ const sponsorOnboardingSchema = z.object({
   }),
 });
 
-// Para este MVP, el onboarding de creators es muy simple. Se puede expandir en el futuro.
 const creatorOnboardingSchema = z.object({
-    creatorProfile: z.object({}).passthrough() 
+  creatorProfile: z.object({
+    firstName: z.string().min(2, "Nombre demasiado corto"),
+    lastName: z.string().min(2, "Apellido demasiado corto"),
+    location: z.string().min(2, "Localización requerida"),
+    company: z.string().min(2, "Nombre de empresa requerido"),
+    position: z.string().min(2, "Cargo requerido"),
+  }),
 });
 
 module.exports = { sponsorOnboardingSchema, creatorOnboardingSchema };

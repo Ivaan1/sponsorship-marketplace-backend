@@ -60,6 +60,12 @@ const updateOnboarding = async (req, res) => {
             }   
         ).select('-password')
 
+        res.json({
+            status: "success",
+            message: "Perfil de creador actualizado correctamente",
+            user: updatedUser
+        });
+        
         if (!updatedUser) {
             return handleHttpError(res, 'USER_NOT_FOUND', 404)
         }
