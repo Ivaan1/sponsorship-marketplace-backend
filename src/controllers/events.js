@@ -134,20 +134,67 @@ async function getEventById(req, res) {
     }
 }
 
-// ── POST /api/events ─────────────────────────────────────────────────────────
-// Solo para pruebas — lo eliminará el squad del organizador cuando
-// implemente su propio controlador.
-
 async function createEvent(req, res) {
-    try {
-        const { body } = req
-        const data = await eventsModel.create(body)
-        res.status(201).json(data)
-    } catch (error) {
-        console.error('Error creando el evento:', error)
-        handleHttpError(res, error)
+  try {
+    const eventData = req.body;
+
+    eventData.organizer = req.user.id;
+    eventData.status = "draft"; // Forzamos el borrador
+
+    const newEvent = await eventsModel.create(eventData);
+
+    return res.status(201).json({
+      success: true,
+      message: "Evento creado con éxito.",
+      data: newEvent
+    });
+
+  } catch (error) {
+    console.error('Error en createEvent:', error);
+    return handleHttpError(res, 'ERROR_CREATING_EVENT', 500);
+  }
+};
+
+
+async function submitOnboarding(req, res) {
+  try {
+    const { id } = req.params;
+    const sponsorshipData = req.body.sponsorship; 
+
+    const event = await eventsModel.findById(id);
+    
+    if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404);
+    
+    // 2. Seguridad: ¿Es el dueño del evento?
+    if (event.organizer.toString() !== req.user.id) {
+      return handleHttpError(res, 'UNAUTHORIZED', 403);
     }
-}
+
+    sponsorshipData.isLookingForSponsors = true;
+    sponsorshipData.sponsorshipStatus = "open";
+
+    const updatedEvent = await eventsModel.findByIdAndUpdate(
+      id,
+      { 
+        $set: { 
+          sponsorship: sponsorshipData,
+          status: "published" 
+        } 
+      },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "¡Onboarding completado! Tu evento ya está visible para los sponsors.",
+      data: updatedEvent
+    });
+
+  } catch (error) {
+    console.error('Error en submitOnboarding:', error);
+    return handleHttpError(res, 'ERROR_SUBMITTING_ONBOARDING', 500);
+  }
+};
 
 
 const getEventByName = async (req, res) => {
@@ -170,5 +217,6 @@ module.exports = {
     createEvent,
     getEvents,
     getEventById,
-    getEventByName
+    getEventByName,
+    submitOnboarding,
 }
