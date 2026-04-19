@@ -64,14 +64,16 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    /* 
-    Analizar mas adelante...
+    // Solo relevante si role === "creator"
     creatorProfile: {
-      organization: { type: String },
-      website: { type: String },
-      eventsHosted: { type: Number, default: 0 },
+      firstName: { type: String },
+      lastName: { type: String },
+      location: { type: String },
+      company: { type: String },
+      position: { type: String }, // Cargo
+      profileImage: { type: String },
+      onboardingCompleted: { type: Boolean, default: false }
     },
-    */
 
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
