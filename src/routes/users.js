@@ -26,11 +26,5 @@ router.patch("/onboarding", authMiddleware,
     updateOnboarding
 );
 
-router.patch(
-    "/onboarding-creator", 
-    authMiddleware, 
-    validatorMiddleware(creatorOnboardingSchema), 
-    updateOnboarding
-);
 
 module.exports = router;
