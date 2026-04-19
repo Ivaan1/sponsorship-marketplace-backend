@@ -29,7 +29,7 @@ router.patch("/onboarding", authMiddleware,
 router.patch(
     "/onboarding-creator", 
     authMiddleware, 
-    validateSchema(creatorOnboardingSchema), 
+    validatorMiddleware(creatorOnboardingSchema), 
     updateOnboarding
 );
 
