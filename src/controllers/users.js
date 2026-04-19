@@ -53,24 +53,25 @@ const updateOnboarding = async (req, res) => {
 
         const updatedUser = await usersModel.findByIdAndUpdate(
             userId,
-            { ...data, onboardingCompleted: true },
             { 
-                returnDocument: 'after', 
+                ...data, // Aquí entrará 'sponsorProfile' o 'creatorProfile' según el Zod
+                onboardingCompleted: true 
+            },
+            { 
+                new: true,
                 runValidators: true   
             }   
-        ).select('-password')
+        ).select('-password');
 
-        res.json({
-            status: "success",
-            message: "Perfil de creador actualizado correctamente",
-            user: updatedUser
-        });
-        
         if (!updatedUser) {
-            return handleHttpError(res, 'USER_NOT_FOUND', 404)
+            return handleHttpError(res, 'USER_NOT_FOUND', 404);
         }
 
-        res.status(200).json({ user: updatedUser })
+        return res.status(200).json({
+            status: "success",
+            message: `Perfil de ${req.user.role} actualizado correctamente`,
+            user: updatedUser
+        });
 
     } catch (error) {
         console.error('Error actualizando onboarding:', error)
