@@ -72,7 +72,6 @@ const userSchema = new mongoose.Schema(
       company: { type: String },
       position: { type: String }, // Cargo
       profileImage: { type: String },
-      onboardingCompleted: { type: Boolean, default: false }
     },
 
     isVerified: { type: Boolean, default: false },
