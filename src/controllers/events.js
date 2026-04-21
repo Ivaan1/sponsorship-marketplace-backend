@@ -135,8 +135,9 @@ async function getEventById(req, res) {
     }
 }
 
-// POST /api/events
-// Solo para pruebas — lo eliminará el squad del organizador.
+// ── POST /api/events ─────────────────────────────────────────────────────────
+// Solo para pruebas — lo eliminará el squad del organizador cuando
+// implemente su propio controlador.
 
 async function createEvent(req, res) {
   try {
