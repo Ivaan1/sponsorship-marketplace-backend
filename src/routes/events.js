@@ -1,30 +1,41 @@
-const express = require('express');
-const router = express.Router();
-const validateSchema = require('../middlewares/validator');
+import { Router } from 'express'
+import {
+    getEvents,
+    getEventById,
+    getEventByName,
+    createEvent,
+    submitOnboarding,
+    getInbox,
+    updateApplication,
+} from '../controllers/events.js'
+import authMiddleware      from '../middlewares/session.js'
+import validateSchema      from '../middlewares/validator.js'
+import { onboardingSchema, createEventSchema } from '../validators/events.js'
 
-const { getEvents, getEventById, getEventByName, createEvent, submitOnboarding } = require('../controllers/events')
-const authMiddleware = require('../middlewares/session');
-const { onboardingSchema, createEventSchema } = require('../validators/events');
- 
+const router = Router()
+
 // Catálogo con filtros y ranking
 // GET /api/events?category=concert&sortBy=relevance&page=1
 router.get('/', getEvents)
 
-router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
+// Buzón unificado (creator ve solicitudes recibidas, sponsor las enviadas)
+router.get('/inbox', authMiddleware, getInbox)
 
 /**
- * @deprecated
- * @description Busca un evento por su nombre exacto.
- * @reason Obsoleto. Utilizar el endpoint principal `GET /api/events?q=nombre` 
- * que incluye el motor de búsqueda con ranking de relevancia.
+ * @deprecated — usar GET /api/events?q=nombre en su lugar.
  */
-router.get('/name/:name',getEventByName);
+router.get('/name/:name', getEventByName)
 
-
-router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+// Solo para pruebas — el squad del organizador lo reemplazará.
+router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
 
 // Detalle de evento
-// GET /api/events/:id
 router.get('/:id', getEventById)
 
-module.exports = router;
+// Aceptar / rechazar solicitud de sponsor
+router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
+
+// Onboarding del organizador
+router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+
+export default router
