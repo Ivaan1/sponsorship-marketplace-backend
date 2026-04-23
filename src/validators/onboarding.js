@@ -27,14 +27,5 @@ const sponsorOnboardingSchema = z.object({
   }),
 });
 
-const creatorOnboardingSchema = z.object({
-  creatorProfile: z.object({
-    firstName: z.string().min(2, "Nombre demasiado corto"),
-    lastName: z.string().min(2, "Apellido demasiado corto"),
-    location: z.string().min(2, "Localización requerida"),
-    company: z.string().min(2, "Nombre de empresa requerido"),
-    position: z.string().min(2, "Cargo requerido"),
-  }),
-});
 
-module.exports = { sponsorOnboardingSchema, creatorOnboardingSchema };
+module.exports = { sponsorOnboardingSchema };

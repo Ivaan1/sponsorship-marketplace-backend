@@ -21,10 +21,11 @@ async function registerUser(req, res) {
         const { password: rawPassword, ...rest } = req.body;
         const password = await encrypt(rawPassword)
 
-        const user = await usersModel.create({ ...rest, password, })
+        const user = await usersModel.create({ ...rest, password, onboardingCompleted: rest.role === 'creator' })
         const userFiltered = {
             email: user.email,
-            role: user.role
+            role: user.role,
+            onboardingCompleted: user.onboardingCompleted
         };
 
         res.status(201).json({

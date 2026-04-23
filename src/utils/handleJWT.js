@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken")
-require('dotenv').config(); 
+require('dotenv').config({ quiet: true }); 
 const JWT_SECRET = process.env.SECRET_JWT
 
 function tokenSign(user){
