@@ -1,4 +1,4 @@
-const { z } = require('zod')
+import { z } from 'zod'
 
 const updateMeSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),
@@ -43,4 +43,4 @@ const updateMeSchema = z.object({
   message: 'Debes enviar al menos un campo para actualizar',
 })
 
-module.exports = { updateMeSchema }
+export { updateMeSchema }

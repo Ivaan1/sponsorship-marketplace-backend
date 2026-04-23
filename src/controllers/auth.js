@@ -1,8 +1,8 @@
 // este controlador se encarga de manejar la autenticación de los usuarios, incluyendo el inicio de sesión y el registro.
-const { handleHttpError } = require('../utils/handleErrors');
-const { usersModel } = require('../models');
-const { tokenSign } = require('../utils/handleJWT.js');
-const { encrypt, compare } = require('../utils/handlePassword');
+import { handleHttpError } from '../utils/handleErrors.js'
+import { usersModel } from '../models/index.js'
+import { tokenSign } from '../utils/handleJWT.js'
+import { encrypt, compare } from '../utils/handlePassword.js'
 
 //solo para pruebas, luego se eliminará 
 async function createUser(req, res) {
@@ -71,8 +71,4 @@ async function loginUser(req, res) {
     }
 }
 
-module.exports = {
-    createUser, 
-    registerUser,
-    loginUser
-}
+export { createUser, registerUser, loginUser }

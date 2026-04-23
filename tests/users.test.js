@@ -1,6 +1,6 @@
-const request = require('supertest')
-const app = require('./helpers/app')
-const { connect, disconnect, clearDatabase } = require('./helpers/db')
+import request from 'supertest'
+import app from './helpers/app.js'
+import { connect, disconnect, clearDatabase } from './helpers/db.js'
 
 beforeAll(async () => await connect())
 afterEach(async () => await clearDatabase())

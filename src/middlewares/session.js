@@ -1,6 +1,6 @@
-const { usersModel } = require('../models')
-const { handleHttpError } = require('../utils/handleErrors')
-const { verifyToken } = require('../utils/handleJWT')
+import { usersModel } from '../models/index.js'
+import { handleHttpError } from '../utils/handleErrors.js'
+import { verifyToken } from '../utils/handleJWT.js'
 
 async function authMiddleware(req, res, next) {
     try {
@@ -35,4 +35,4 @@ async function authMiddleware(req, res, next) {
     }
 }
 
-module.exports = authMiddleware
+export default authMiddleware

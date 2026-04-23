@@ -1,9 +1,10 @@
-const mongoose = require('mongoose')
-const { faker, fakerES } = require('@faker-js/faker')
-require('dotenv').config()
+import mongoose from 'mongoose'
+import { faker, fakerES } from '@faker-js/faker'
+import dotenv from 'dotenv'
+import { eventsModel } from '../../models/index.js'
+import dbConnect from '../../config/mongo.js'
 
-const { eventsModel } = require('../../models')
-const dbConnect = require('../../config/mongo')
+dotenv.config()
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 

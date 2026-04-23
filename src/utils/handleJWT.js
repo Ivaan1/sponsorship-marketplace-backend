@@ -1,5 +1,7 @@
-const jwt = require("jsonwebtoken")
-require('dotenv').config({ quiet: true }); 
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config({ quiet: true })
 const JWT_SECRET = process.env.SECRET_JWT
 
 function tokenSign(user){
@@ -49,9 +51,4 @@ function verifyRecoveryToken(tokenJwt){
     }
 }
 
-module.exports = {
-    tokenSign, 
-    verifyToken,
-    tokenSignRecovery,
-    verifyRecoveryToken
-    }
+export { tokenSign, verifyToken, tokenSignRecovery, verifyRecoveryToken }

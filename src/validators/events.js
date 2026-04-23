@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod'
 
 const createEventSchema = z.object({
 
@@ -125,8 +125,4 @@ const updateEventSchema = z.object({
   message: 'Debes enviar al menos un campo para actualizar',
 })
 
-module.exports = {
-    createEventSchema,
-    onboardingSchema,
-    updateEventSchema
-};
+export { createEventSchema, onboardingSchema, updateEventSchema }

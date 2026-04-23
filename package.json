@@ -6,13 +6,13 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "cross-env NODE_ENV=test jest --verbose --forceExit --runInBand",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --verbose --forceExit --runInBand",
     "seed:events": "node src/utils/seeds/events.seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
     "bcryptjs": "^3.0.3",

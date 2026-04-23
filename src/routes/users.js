@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express'
+import { getUsers, getMe, getUserById, updateMe, deleteMe, updateOnboarding } from '../controllers/users.js'
+import authMiddleware from '../middlewares/session.js'
+import validatorMiddleware from '../middlewares/validator.js'
+import { updateMeSchema } from '../validators/users.js'
+import { sponsorOnboardingSchema } from '../validators/onboarding.js'
 
-const { getUsers, getMe, getUserById, updateMe, deleteMe, updateOnboarding } = require('../controllers/users');
-const authMiddleware = require('../middlewares/session');
-const validatorMiddleware = require('../middlewares/validator');
-const { updateMeSchema } = require('../validators/users');
-const { sponsorOnboardingSchema } = require('../validators/onboarding');
+const router = express.Router()
 
 router.get('/', authMiddleware, getUsers);
 
@@ -23,4 +23,4 @@ router.patch("/onboarding", authMiddleware,
 );
 
 
-module.exports = router;
+export default router
