@@ -1,5 +1,5 @@
-const mongoose = require('mongoose')
-const { MongoMemoryServer } = require('mongodb-memory-server')
+import mongoose from 'mongoose'
+import { MongoMemoryServer } from 'mongodb-memory-server'
  
 let mongod
  
@@ -22,5 +22,5 @@ async function clearDatabase() {
   }
 }
  
-module.exports = { connect, disconnect, clearDatabase }
+export { connect, disconnect, clearDatabase }
  

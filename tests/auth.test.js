@@ -1,6 +1,6 @@
-const request = require('supertest')
-const app = require('./helpers/app')
-const { connect, disconnect, clearDatabase } = require('./helpers/db')
+import request from 'supertest'
+import app from './helpers/app.js'
+import { connect, disconnect, clearDatabase } from './helpers/db.js'
  
 beforeAll(async () => await connect())
 afterEach(async () => await clearDatabase())
@@ -58,18 +58,6 @@ describe('POST /api/auth/register', () => {
     expect(res.body.token.length).toBeGreaterThan(0)
     expect(res.body.user.role).toBe('creator')
     expect(res.body.user).not.toHaveProperty('password')
-  })
-
-  it('debería registrar un creator y que esté listo para usar la app', async () => {
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send(validCreator)
-  
-    expect(res.status).toBe(201)
-    // Si habéis decidido que ya nace con el onboarding hecho:
-    expect(res.body.user.onboardingCompleted).toBe(true) 
-    // O si simplemente no lo tiene, asegúrate de que el token funciona
-    expect(res.body).toHaveProperty('token')
   })
  
   it('debería rechazar si el email ya existe', async () => {

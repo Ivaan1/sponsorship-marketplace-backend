@@ -1,7 +1,7 @@
-const { eventsModel, usersModel } = require('../models')
-const { handleHttpError }         = require('../utils/handleErrors')
-const { rankEvents }              = require('../utils/rankEvents')
-const { verifyToken }             = require('../utils/handleJWT')
+import { eventsModel, usersModel } from '../models/index.js'
+import { handleHttpError } from '../utils/handleErrors.js'
+import { rankEvents } from '../utils/rankEvents.js'
+import { verifyToken } from '../utils/handleJWT.js'
 
 
 // ── GET /api/events ──────────────────────────────────────────────────────────
@@ -294,12 +294,4 @@ async function submitOnboarding(req, res) {
   }
 };
 
-module.exports = {
-    createEvent,
-    getEvents,
-    getMyEvents,
-    getEventById,
-    updateEvent,
-    deleteEvent,
-    submitOnboarding,
-}
+export { createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, submitOnboarding }

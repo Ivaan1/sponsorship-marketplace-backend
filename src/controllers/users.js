@@ -1,8 +1,8 @@
 // este controlador se encarga de manejar operaciones con usuarios
 //el login y register se manejan en el controlador de auth.js
 
-const { usersModel } = require("../models");
-const { handleHttpError } = require ('../utils/handleErrors')
+import { usersModel } from '../models/index.js'
+import { handleHttpError } from '../utils/handleErrors.js'
 
 const getUsers = async (req, res) => {
   try {
@@ -134,4 +134,4 @@ const updateOnboarding = async (req, res) => {
     }
 }
 
-module.exports = { getUsers, getMe, getUserById, updateMe, deleteMe, updateOnboarding };
+export { getUsers, getMe, getUserById, updateMe, deleteMe, updateOnboarding }

@@ -1,4 +1,4 @@
-const { z } = require("zod");
+import { z } from 'zod'
 
 const sponsorOnboardingSchema = z.object({
   sponsorProfile: z.object({
@@ -28,4 +28,4 @@ const sponsorOnboardingSchema = z.object({
 });
 
 
-module.exports = { sponsorOnboardingSchema };
+export { sponsorOnboardingSchema }

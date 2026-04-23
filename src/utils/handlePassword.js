@@ -1,4 +1,4 @@
-const bcryptjs = require("bcryptjs")
+import bcryptjs from 'bcryptjs'
 
 async function encrypt(clearPassword) {
     // El número "Salt" otorga aleatoriedad a la función hash al combinarla con la password en claro.
@@ -12,4 +12,4 @@ async function compare(clearPassword, hashedPassword) {
     return result
 }
 
-module.exports = { encrypt, compare}
+export { encrypt, compare }
