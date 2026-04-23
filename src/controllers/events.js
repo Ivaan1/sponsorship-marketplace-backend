@@ -128,9 +128,13 @@ async function getEventById(req, res) {
 
         const token = authHeader.split(' ').pop()
         const dataToken = await verifyToken(token)
-        if (!dataToken?._id) return handleHttpError(res, 'INVALID_TOKEN', 401)
-
-        if (event.organizer?.toString() !== dataToken._id.toString()) {
+            
+        const userId = dataToken._id || dataToken.id;
+        if (!userId) return handleHttpError(res, 'INVALID_TOKEN', 401)
+    
+        const organizerId = event.organizer._id || event.organizer;
+    
+        if (organizerId.toString() !== userId.toString()) {
             return handleHttpError(res, 'UNAUTHORIZED', 403)
         }
 
