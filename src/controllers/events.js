@@ -1,6 +1,7 @@
 const { eventsModel, usersModel } = require('../models')
 const { handleHttpError }         = require('../utils/handleErrors')
 const { rankEvents }              = require('../utils/rankEvents')
+const { verifyToken }             = require('../utils/handleJWT')
 
 
 // ── GET /api/events ──────────────────────────────────────────────────────────
@@ -115,6 +116,20 @@ async function getEvents(req, res) {
     }
 }
 
+async function getMyEvents(req, res) {
+    try {
+        const events = await eventsModel
+            .find({ organizer: req.user.id })
+            .populate('organizer', 'name email')
+            .sort({ createdAt: -1 })
+
+        return res.status(200).json(events)
+    } catch (error) {
+        console.error('Error en getMyEvents:', error)
+        handleHttpError(res, 'ERROR_GETTING_MY_EVENTS', 500)
+    }
+}
+
 // ── GET /api/events/:id ──────────────────────────────────────────────────────
 // Devuelve el detalle completo de un evento para la ficha.
 
@@ -125,6 +140,27 @@ async function getEventById(req, res) {
             .populate('organizer', 'name email')
 
         if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
+
+        // Si está publicado, es público.
+        if (event.status === 'published') {
+            return res.status(200).json(event)
+        }
+
+        // Si es draft/cancelled/finished, solo puede verlo el owner.
+        const authHeader = req.headers.authorization
+        if (!authHeader) {
+            return handleHttpError(res, 'NO_TOKEN_FOUND', 401)
+        }
+
+        const token = authHeader.split(' ').pop()
+        const dataToken = await verifyToken(token)
+        if (!dataToken?._id) {
+            return handleHttpError(res, 'INVALID_TOKEN', 401)
+        }
+
+        if (event.organizer?._id?.toString() !== dataToken._id.toString()) {
+            return handleHttpError(res, 'UNAUTHORIZED', 403)
+        }
 
         return res.status(200).json(event)
 
@@ -155,6 +191,68 @@ async function createEvent(req, res) {
   }
 };
 
+async function updateEvent(req, res) {
+  try {
+    const { id } = req.params
+    const event = await eventsModel.findById(id)
+
+    if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+
+    if (event.organizer.toString() !== req.user.id) {
+      return handleHttpError(res, 'UNAUTHORIZED', 403)
+    }
+
+    const updatedEvent = await eventsModel.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { returnDocument: 'after', runValidators: true }
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'Evento actualizado con éxito.',
+      data: updatedEvent
+    })
+  } catch (error) {
+    console.error('Error en updateEvent:', error)
+    return handleHttpError(res, 'ERROR_UPDATING_EVENT', 500)
+  }
+}
+
+async function deleteEvent(req, res) {
+  try {
+    const { id } = req.params
+    const event = await eventsModel.findById(id)
+
+    if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+
+    if (event.organizer.toString() !== req.user.id) {
+      return handleHttpError(res, 'UNAUTHORIZED', 403)
+    }
+
+    const deletedEvent = await eventsModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: 'cancelled',
+          'sponsorship.isLookingForSponsors': false,
+          'sponsorship.sponsorshipStatus': 'closed',
+        }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'Evento cancelado correctamente.',
+      data: deletedEvent
+    })
+  } catch (error) {
+    console.error('Error en deleteEvent:', error)
+    return handleHttpError(res, 'ERROR_DELETING_EVENT', 500)
+  }
+}
+
 
 async function submitOnboarding(req, res) {
   try {
@@ -181,7 +279,7 @@ async function submitOnboarding(req, res) {
           status: "published" 
         } 
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     return res.status(200).json({
@@ -196,27 +294,12 @@ async function submitOnboarding(req, res) {
   }
 };
 
-
-const getEventByName = async (req, res) => {
-  try {
-    const { name } = req.params;
-    const event = await eventsModel.findOne({ name });
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Evento no encontrado' });
-    }
-    
-    res.json(event);
-  } catch (error) {
-    handleHttpError(res, error);
-  }
-};
-
-
 module.exports = {
     createEvent,
     getEvents,
+    getMyEvents,
     getEventById,
-    getEventByName,
+    updateEvent,
+    deleteEvent,
     submitOnboarding,
 }

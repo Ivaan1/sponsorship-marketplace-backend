@@ -3,11 +3,8 @@ const router = express.Router();
 const validateSchema = require('../middlewares/validator');
 
 
-const { createUser, registerUser, loginUser } = require('../controllers/auth');
+const { registerUser, loginUser } = require('../controllers/auth');
 const { registerSchema, loginSchema } = require('../validators/auth');
-
-
-router.post('/register-test', validateSchema(registerSchema), createUser); // Borrar luego, solo para probar la base de datos
 
 router.post('/register', validateSchema(registerSchema), registerUser); // Endpoint real de registro, con validación
 
