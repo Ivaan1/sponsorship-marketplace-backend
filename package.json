@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "cross-env NODE_ENV=test jest --verbose --runInBand",
+    "test": "cross-env NODE_ENV=test jest --verbose --forceExit --runInBand",
     "seed:events": "node src/utils/seeds/events.seed.js"
   },
   "keywords": [],
