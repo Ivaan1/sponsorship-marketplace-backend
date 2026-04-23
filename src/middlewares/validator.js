@@ -5,11 +5,15 @@ const validateSchema = (schema) => (req, res, next) => {
     req.body = schema.parse(req.body)
     next()
   } catch (error) {
-    console.error('Validation error:', error)
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Validation error:', error)
+    }
 
-    if (error instanceof ZodError && Array.isArray(error.errors)) {
+    const issues = error?.issues || error?.errors
+
+    if (error instanceof ZodError && Array.isArray(issues)) {
       return res.status(400).json({
-        errors: error.errors.map((err) => ({
+        errors: issues.map((err) => ({
           field: err.path.join(".") || "unknown",
           message: err.message,
         })),
