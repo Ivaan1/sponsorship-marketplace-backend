@@ -1,4 +1,4 @@
-const { z } = require("zod");
+import { z } from 'zod'
 
 const registerSchema = z.object({
   email: z.string().email("Email inválido").trim().toLowerCase(),
@@ -13,4 +13,4 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
-module.exports = { registerSchema, loginSchema };
+export { registerSchema, loginSchema }

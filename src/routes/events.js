@@ -1,41 +1,45 @@
 import { Router } from 'express'
+import validateSchema from '../middlewares/validator.js'
+import authMiddleware from '../middlewares/session.js'
+import { 
+  onboardingSchema, 
+  createEventSchema, 
+  updateEventSchema 
+} from '../validators/events.js'
+
 import {
-    getEvents,
-    getEventById,
-    getEventByName,
-    createEvent,
-    submitOnboarding,
-    getInbox,
-    updateApplication,
+  getEvents,
+  getMyEvents,
+  getEventById,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  submitOnboarding,
+  getInbox,
+  updateApplication,
 } from '../controllers/events.js'
-import authMiddleware      from '../middlewares/session.js'
-import validateSchema      from '../middlewares/validator.js'
-import { onboardingSchema, createEventSchema } from '../validators/events.js'
 
 const router = Router()
 
-// Catálogo con filtros y ranking
+// --- 1. Rutas de CONSULTA PÚBLICA (Catálogo) ---
 // GET /api/events?category=concert&sortBy=relevance&page=1
 router.get('/', getEvents)
 
-// Buzón unificado (creator ve solicitudes recibidas, sponsor las enviadas)
+// --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
+// IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
+router.get('/me', authMiddleware, getMyEvents)
 router.get('/inbox', authMiddleware, getInbox)
 
-/**
- * @deprecated — usar GET /api/events?q=nombre en su lugar.
- */
-router.get('/name/:name', getEventByName)
-
-// Solo para pruebas — el squad del organizador lo reemplazará.
-router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
-
-// Detalle de evento
+// --- 3. Rutas por ID (Dinámicas) ---
 router.get('/:id', getEventById)
 
-// Aceptar / rechazar solicitud de sponsor
-router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
+// --- 4. Gestión de Eventos (Creación, Edición, Borrado) ---
+router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
+router.patch('/:id', authMiddleware, validateSchema(updateEventSchema), updateEvent)
+router.delete('/:id', authMiddleware, deleteEvent)
 
-// Onboarding del organizador
+// --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
 router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
 
 export default router

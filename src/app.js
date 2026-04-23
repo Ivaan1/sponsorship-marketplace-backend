@@ -1,9 +1,12 @@
-require('dotenv').config(); // Siempre lo primero
-const express = require("express");
-const cors = require("cors");
-const dbConnect = require('./config/mongo');
-const swaggerUi = require('swagger-ui-express')
-const swaggerSpec = require('./config/swagger')
+import dotenv from 'dotenv'
+import express from 'express'
+import cors from 'cors'
+import dbConnect from './config/mongo.js'
+import swaggerUi from 'swagger-ui-express'
+import swaggerSpec from './config/swagger.js'
+import routes from './routes/index.js'
+
+dotenv.config() // Siempre lo primero
 
 const app = express();
 
@@ -15,7 +18,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // ← añad
 
 
 // CARGA DE RUTAS
-app.use("/api", require("./routes")); // Lee routes/index.js
+app.use('/api', routes) // Lee routes/index.js
 
 // PUERTO Y ARRANQUE
 const port = process.env.PORT || 3000;

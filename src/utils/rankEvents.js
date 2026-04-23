@@ -133,4 +133,4 @@ function rankEvents(events, sponsor = null) {
     .sort((a, b) => b._score - a._score)
 }
 
-module.exports = { rankEvents, scoreEvent, normalizeCategory }
+export { rankEvents, scoreEvent, normalizeCategory }

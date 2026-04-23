@@ -1,4 +1,4 @@
-const swaggerJsdoc = require('swagger-jsdoc')
+import swaggerJsdoc from 'swagger-jsdoc'
 const port = process.env.PORT || 3000; 
 
 const options = {
@@ -25,4 +25,4 @@ const options = {
     apis: ['./src/docs/*.js'], // ← apunta a la carpeta docs
 }
 
-module.exports = swaggerJsdoc(options)
+export default swaggerJsdoc(options)

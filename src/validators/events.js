@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod'
 
 const createEventSchema = z.object({
 
@@ -106,7 +106,23 @@ const onboardingSchema = z.object({
   })
 });
 
-module.exports = {
-    createEventSchema,
-    onboardingSchema
-};
+const updateEventSchema = z.object({
+  name: z.string().trim().min(3).optional(),
+  summary: z.string().max(140).optional(),
+  introduction: z.string().optional(),
+  location: z.object({
+    type: z.enum(["venue", "online", "tba"]).optional(),
+    venue: z.object({
+      name: z.string().optional(),
+      address1: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional()
+    }).optional(),
+    onlineUrl: z.string().url("Debe ser un enlace válido").optional()
+  }).optional(),
+  status: z.enum(["draft", "published", "cancelled", "finished"]).optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: 'Debes enviar al menos un campo para actualizar',
+})
+
+export { createEventSchema, onboardingSchema, updateEventSchema }

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --verbose --forceExit --runInBand",
     "seed:events": "node src/utils/seeds/events.seed.js"
   },
   "keywords": [],
@@ -20,13 +20,19 @@
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "express-validator": "^7.3.1",
-    "install": "^0.13.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.2",
     "nodemon": "^3.1.11",
-    "npm": "^11.12.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "install": "^0.13.0",
+    "jest": "^30.3.0",
+    "mongodb-memory-server": "^11.0.1",
+    "npm": "^11.12.1",
+    "supertest": "^7.2.2"
   }
 }
