@@ -2,10 +2,10 @@ import { Router } from 'express'
 import {
     getEvents,
     getEventById,
-    getEventByName,
     createEvent,
     getInbox,       
     updateApplication,
+    getMyEvents,
 } from '../controllers/events.js'
 import authMiddleware from '../middlewares/session.js'
 
@@ -19,7 +19,8 @@ router.get('/', getEvents)
 // Buzón unificado (creator ve solicitudes recibidas, sponsor las enviadas) ──
 router.get('/inbox', authMiddleware, getInbox)
 
-// Solo para pruebas 
+router.get('/mine', authMiddleware, getMyEvents)
+
 // El squad del organizador lo reemplazará con su propia implementación.
 router.post('/', createEvent)
 
@@ -28,12 +29,5 @@ router.get('/:id', getEventById)
 
 // Aceptar / rechazar solicitud de sponsor
 router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
-
-/**
- * @deprecated
- * Usar GET /api/events?q=nombre en su lugar.
- */
-router.get('/name/:name', getEventByName)
-
 
 export default router
