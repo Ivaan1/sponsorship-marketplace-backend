@@ -97,20 +97,6 @@ async function getEvents(req, res) {
     }
 }
 
-async function getMyEvents(req, res) {
-    try {
-        const events = await eventsModel
-            .find({ organizer: req.user._id })
-            .populate('organizer', 'name email')
-            .sort({ createdAt: -1 })
-
-        return res.status(200).json(events)
-    } catch (error) {
-        console.error('Error en getMyEvents:', error)
-        handleHttpError(res, 'ERROR_GETTING_MY_EVENTS', 500)
-    }
-}
-
 async function getEventById(req, res) {
     try {
         const event = await eventsModel
@@ -295,5 +281,4 @@ export {
     submitOnboarding, 
     getInbox, 
     updateApplication,
-    getMyEvents
 }
