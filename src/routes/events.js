@@ -4,7 +4,9 @@ import authMiddleware from '../middlewares/session.js'
 import { 
   onboardingSchema, 
   createEventSchema, 
-  updateEventSchema 
+  updateEventSchema,
+  applyEventSchema,
+  updateApplicationSchema
 } from '../validators/events.js'
 
 import {
@@ -41,7 +43,7 @@ router.delete('/:id', authMiddleware, deleteEvent)
 
 // --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
 router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
-router.post('/:id/apply', authMiddleware, applyToEvent)
-router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
+router.post('/:id/apply', authMiddleware,validateSchema(applyEventSchema), applyToEvent)
+router.patch('/:id/applications/:appId', authMiddleware,validateSchema(updateApplicationSchema), updateApplication)
 
 export default router

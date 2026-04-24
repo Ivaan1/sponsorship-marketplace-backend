@@ -129,4 +129,16 @@ const updateEventSchema = z.object({
   message: 'Debes enviar al menos un campo para actualizar',
 })
 
-export { createEventSchema, onboardingSchema, updateEventSchema }
+const applyEventSchema = z.object({
+    message: z.string({
+      required_error: "El mensaje de motivación es obligatorio",
+    }).min(1, "El mensaje no puede estar vacío"),
+});
+
+const updateApplicationSchema = z.object({
+  status: z.enum(['accepted', 'rejected'], {
+    errorMap: () => ({ message: "El estado debe ser 'accepted' o 'rejected'" }),
+  }),
+});
+
+export { createEventSchema, onboardingSchema, updateEventSchema, applyEventSchema, updateApplicationSchema }
