@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import { faker, fakerES } from '@faker-js/faker'
 import dotenv from 'dotenv'
-import { eventsModel } from '../../models/index.js'
+import { eventsModel, usersModel } from '../../models/index.js'
 import dbConnect from '../../config/mongo.js'
 
 dotenv.config()
@@ -115,7 +115,7 @@ const generateCast = () =>
     }))
 
 const generateSponsorship = (category) => ({
-    isLookingForSponsors: faker.datatype.boolean(),
+    isLookingForSponsors: true,
     category,
     budget: {
         min: faker.number.int({ min: 500, max: 5000 }),
@@ -161,6 +161,16 @@ const generateSponsorship = (category) => ({
         message: fakerES.lorem.sentence(),
         appliedAt: faker.date.recent({ days: 60 }),
     })),
+    collaborationTypes: faker.helpers.arrayElements(["financial", "services", "brand_collaboration"], 2),
+    pitch: fakerES.lorem.paragraph(),
+    socialLinks: {
+        whatsapp: faker.phone.number(),
+        instagram: `https://instagram.com/${faker.internet.username()}`,
+    },
+    
+    sponsorshipLevel: faker.helpers.arrayElement(sponsorshipLevels),
+    sponsorshipStatus: 'open',
+    sponsorsApplied: []
 })
 
 // ─── Generador principal de evento ────────────────────────────────────────────
@@ -257,9 +267,10 @@ const seed = async () => {
 
     await eventsModel.deleteMany()
     console.log('🗑️  Eventos anteriores eliminados')
+    
 
     // ⚠️ Reemplaza este ID por un ObjectId real de tu colección de usuarios
-    const fakeOrganizerId = '69bd3e73a2a65688cc7a9087'
+    const fakeOrganizerId = '69ebc5b72d24438dba8ccffc'
 
     const events = Array.from({ length: 50 }, () => generateEvent(fakeOrganizerId))
     await eventsModel.insertMany(events)
