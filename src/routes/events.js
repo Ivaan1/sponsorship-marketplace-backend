@@ -17,6 +17,7 @@ import {
   submitOnboarding,
   getInbox,
   updateApplication,
+  applyToEvent,
 } from '../controllers/events.js'
 
 const router = Router()
@@ -27,7 +28,7 @@ router.get('/', getEvents)
 
 // --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
 // IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
-router.get('/me', authMiddleware, getMyEvents)
+router.get('/mine', authMiddleware, getMyEvents)
 router.get('/inbox', authMiddleware, getInbox)
 
 // --- 3. Rutas por ID (Dinámicas) ---
@@ -40,6 +41,7 @@ router.delete('/:id', authMiddleware, deleteEvent)
 
 // --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
 router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+router.post('/:id/apply', authMiddleware, applyToEvent)
 router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
 
 export default router

@@ -104,7 +104,7 @@ async function getMyEvents(req, res) {
             .populate('organizer', 'name email')
             .sort({ createdAt: -1 })
 
-        return res.status(200).json(events)
+        return res.status(200).json({ data: events, total: events.length })
     } catch (error) {
         console.error('Error en getMyEvents:', error)
         handleHttpError(res, 'ERROR_GETTING_MY_EVENTS', 500)
@@ -272,6 +272,31 @@ async function updateApplication(req, res) {
     }
 }
 
+async function applyToEvent(req, res) {
+    try {
+        const { id } = req.params
+        const sponsorId = req.user._id
+
+        const event = await eventsModel.findById(id)
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+        if (event.status !== 'published') return handleHttpError(res, 'EVENT_NOT_AVAILABLE', 400)
+
+        const alreadyApplied = event.sponsorship.sponsorsApplied
+            .some(app => app.sponsor.toString() === sponsorId.toString())
+        if (alreadyApplied) return handleHttpError(res, 'ALREADY_APPLIED', 409)
+
+        event.sponsorship.sponsorsApplied.push({
+            sponsor: sponsorId,
+            message: req.body.message ?? '',
+        })
+        await event.save()
+
+        return res.status(201).json({ success: true, message: 'Solicitud enviada correctamente' })
+    } catch (error) {
+        handleHttpError(res, 'ERROR_APPLYING_TO_EVENT', 500)
+    }
+}
+
 export { 
     getEvents, 
     getMyEvents, 
@@ -281,5 +306,6 @@ export {
     deleteEvent, 
     submitOnboarding, 
     getInbox, 
-    updateApplication 
+    updateApplication,
+    applyToEvent
 }
