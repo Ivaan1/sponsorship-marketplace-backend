@@ -17,6 +17,7 @@ import {
   submitOnboarding,
   getInbox,
   updateApplication,
+  applyToEvent,
 } from '../controllers/events.js'
 
 const router = Router()
@@ -40,6 +41,7 @@ router.delete('/:id', authMiddleware, deleteEvent)
 
 // --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
 router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+router.post('/:id/apply', authMiddleware, applyToEvent)
 router.patch('/:id/applications/:appId', authMiddleware, updateApplication)
 
 export default router
