@@ -268,7 +268,8 @@ async function updateApplication(req, res) {
         }
         return res.status(200).json({ status, ...(sponsorContact && { sponsorContact }) })
     } catch (error) {
-        handleHttpError(res, error)
+        console.log('Error en updateApplication:', error)
+        handleHttpError(res, 'ERROR_UPDATING_APPLICATION', 500)
     }
 }
 
@@ -278,6 +279,7 @@ async function applyToEvent(req, res) {
         const sponsorId = req.user._id
 
         const event = await eventsModel.findById(id)
+        if (req.user.role !== 'sponsor') return handleHttpError(res, "SOLO_LOS_SPONSORS_PUEDEN_PATROCINAR", 403);
         if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
         if (event.status !== 'published') return handleHttpError(res, 'EVENT_NOT_AVAILABLE', 400)
 
@@ -293,6 +295,7 @@ async function applyToEvent(req, res) {
 
         return res.status(201).json({ success: true, message: 'Solicitud enviada correctamente' })
     } catch (error) {
+        console.error('Error en applyToEvent:', error)
         handleHttpError(res, 'ERROR_APPLYING_TO_EVENT', 500)
     }
 }
