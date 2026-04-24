@@ -283,17 +283,17 @@ describe('GET /api/events/:id', () => {
   })
 })
 
-describe('GET /api/events/me', () => {
+describe('GET /api/events/mine', () => {
   it('debería listar eventos del usuario autenticado', async () => {
     const owner = await registerAndLogin('creator')
     await request(app).post('/api/events').set('Authorization', `Bearer ${owner.token}`).send(buildEvent())
     const res = await request(app)
-      .get('/api/events/me')
+      .get('/api/events/mine')
       .set('Authorization', `Bearer ${owner.token}`)
 
     expect(res.status).toBe(200)
-    expect(Array.isArray(res.body)).toBe(true)
-    expect(res.body.length).toBe(1)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBe(1)
   })
 })
 

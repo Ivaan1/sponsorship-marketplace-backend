@@ -123,7 +123,7 @@ const updateEventSchema = z.object({
       country: z.string().optional()
     }).optional(),
     onlineUrl: z.preprocess((val) => (val === '' ? undefined : val),z.string().url("Debe ser un enlace válido").optional())
-  }, { required_error: "La ubicación es obligatoria" }),
+  }, { required_error: "La ubicación es obligatoria" }).optional(),
   status: z.enum(["draft", "published", "cancelled", "finished"]).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Debes enviar al menos un campo para actualizar',
