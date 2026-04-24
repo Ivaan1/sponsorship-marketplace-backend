@@ -27,7 +27,7 @@ router.get('/', getEvents)
 
 // --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
 // IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
-router.get('/me', authMiddleware, getMyEvents)
+router.get('/mine', authMiddleware, getMyEvents)
 router.get('/inbox', authMiddleware, getInbox)
 
 // --- 3. Rutas por ID (Dinámicas) ---

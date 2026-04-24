@@ -104,7 +104,7 @@ async function getMyEvents(req, res) {
             .populate('organizer', 'name email')
             .sort({ createdAt: -1 })
 
-        return res.status(200).json(events)
+        return res.status(200).json({ data: events, total: events.length })
     } catch (error) {
         console.error('Error en getMyEvents:', error)
         handleHttpError(res, 'ERROR_GETTING_MY_EVENTS', 500)
