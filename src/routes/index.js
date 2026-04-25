@@ -1,17 +1,12 @@
-const express = require("express")
-const fs = require("fs")
+import express from 'express'
+import authRoutes from './auth.js'
+import usersRoutes from './users.js'
+import eventsRoutes from './events.js'
+
 const router = express.Router()
 
-const removeExtension = (fileName) => {
-    //Solo la primera parte del split (lo de antes del punto)
-    return fileName.split('.').shift()
-}
+router.use('/auth', authRoutes)
+router.use('/users', usersRoutes)
+router.use('/events', eventsRoutes)
 
-fs.readdirSync(__dirname).filter((file) => {
-    const name = removeExtension(file) // index, users, storage, tracks
-    if (name !== 'index') {
-        router.use('/' + name, require('./' + name)) // http://localhost:3000/api/tracks
-    }
-})
-
-module.exports = router
+export default router

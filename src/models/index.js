@@ -1,6 +1,7 @@
-const models = {
-    usersModel: require('./nosql/users'),
-    eventsModel: require('./nosql/events'),
-}
+import usersModel from './nosql/users.js'
+import eventsModel from './nosql/events.js'
 
-module.exports = models
+const models = { usersModel, eventsModel }
+
+export { usersModel, eventsModel }
+export default models

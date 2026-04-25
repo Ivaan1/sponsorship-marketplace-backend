@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod'
 
 const createEventSchema = z.object({
 
@@ -37,7 +37,11 @@ const createEventSchema = z.object({
     }).optional(),
     
     // Si es "online", el frontend puede mandar el link
-    onlineUrl: z.string().url("Debe ser un enlace válido").optional()
+    onlineUrl: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().url("Debe ser un enlace válido").optional()
+  )
+
     
   }, { required_error: "La ubicación es obligatoria" }),
 
@@ -106,7 +110,35 @@ const onboardingSchema = z.object({
   })
 });
 
-module.exports = {
-    createEventSchema,
-    onboardingSchema
-};
+const updateEventSchema = z.object({
+  name: z.string().trim().min(3).optional(),
+  summary: z.string().max(140).optional(),
+  introduction: z.string().optional(),
+  location: z.object({
+    type: z.enum(["venue", "online", "tba"]).optional(),
+    venue: z.object({
+      name: z.string().optional(),
+      address1: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional()
+    }).optional(),
+    onlineUrl: z.preprocess((val) => (val === '' ? undefined : val),z.string().url("Debe ser un enlace válido").optional())
+  }, { required_error: "La ubicación es obligatoria" }).optional(),
+  status: z.enum(["draft", "published", "cancelled", "finished"]).optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: 'Debes enviar al menos un campo para actualizar',
+})
+
+const applyEventSchema = z.object({
+    message: z.string({
+      required_error: "El mensaje de motivación es obligatorio",
+    }).min(1, "El mensaje no puede estar vacío"),
+});
+
+const updateApplicationSchema = z.object({
+  status: z.enum(['accepted', 'rejected'], {
+    errorMap: () => ({ message: "El estado debe ser 'accepted' o 'rejected'" }),
+  }),
+});
+
+export { createEventSchema, onboardingSchema, updateEventSchema, applyEventSchema, updateApplicationSchema }
