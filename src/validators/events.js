@@ -2,21 +2,21 @@ import { z } from 'zod'
 
 const createEventSchema = z.object({
 
-  name: z.string({ 
-    required_error: "El nombre del evento es obligatorio" 
+  name: z.string({
+    required_error: "El nombre del evento es obligatorio"
   }).trim().min(3, "El nombre debe tener al menos 3 caracteres"),
-  
+
   summary: z.string()
     .max(140, "El resumen no puede superar los 140 caracteres")
     .optional(),
-    
+
   introduction: z.string().optional(),
 
 
   eventType: z.enum(["single", "recurring"], {
     required_error: "Debes especificar si es un evento único ('single') o recurrente ('recurring')"
   }),
-  
+
   // Zod valida las fechas que llegan del Frontend como Strings en formato ISO (ej: "2026-10-15T18:00:00Z")
   singleDate: z.object({
     startTime: z.string().datetime({ message: "Formato de fecha de inicio inválido" }),
@@ -27,7 +27,7 @@ const createEventSchema = z.object({
     type: z.enum(["venue", "online", "tba"], {
       required_error: "El tipo de ubicación es obligatorio"
     }),
-    
+
     // Si es "venue" (Físico), el frontend puede mandar estos datos
     venue: z.object({
       name: z.string().optional(),
@@ -35,14 +35,13 @@ const createEventSchema = z.object({
       city: z.string().optional(),
       country: z.string().optional()
     }).optional(),
-    
+
     // Si es "online", el frontend puede mandar el link
     onlineUrl: z.preprocess(
-    (val) => (val === '' ? undefined : val),
-    z.string().url("Debe ser un enlace válido").optional()
-  )
+      (val) => (val === '' ? undefined : val),
+      z.string().url("Debe ser un enlace válido").optional()
+    )
 
-    
   }, { required_error: "La ubicación es obligatoria" }),
 
   media: z.object({
@@ -56,20 +55,20 @@ const createEventSchema = z.object({
 const onboardingSchema = z.object({
 
   sponsorship: z.object({
-    
+
     // ── 1. Categoría (Obligatorio) ──
     category: z.enum([
-      "music", "technology", "gastronomy", "culture", "business", 
-      "health", "education", "entertainment", "concert", 
+      "music", "technology", "gastronomy", "culture", "business",
+      "health", "education", "entertainment", "concert",
       "conference", "festival", "sports", "networking", "other"
-    ], { 
+    ], {
       required_error: "Debes seleccionar una categoría para tu evento",
-      invalid_type_error: "Categoría no válida" 
+      invalid_type_error: "Categoría no válida"
     }),
 
     // ── 2. Público / Aforo (Obligatorio) ──
     targetAudience: z.object({
-      expectedAttendees: z.number({ 
+      expectedAttendees: z.number({
         required_error: "Debes indicar la cantidad de público esperado",
         invalid_type_error: "El público debe ser un número"
       }).min(1, "Debe haber al menos 1 asistente")
@@ -91,12 +90,12 @@ const onboardingSchema = z.object({
     }, { required_error: "El rango de presupuesto es obligatorio" }),
 
     // ── 5. Propuesta de patrocinio (Obligatorio) ──
-    pitch: z.string({ 
-      required_error: "La propuesta de patrocinio es obligatoria" 
+    pitch: z.string({
+      required_error: "La propuesta de patrocinio es obligatoria"
     })
-    .trim()
-    .min(30, "El pitch es muy corto, cuéntale un poco más a las marcas (min. 30 caracteres)")
-    .max(1500, "La propuesta es demasiado larga (máximo 1500 caracteres)"),
+      .trim()
+      .min(30, "El pitch es muy corto, cuéntale un poco más a las marcas (min. 30 caracteres)")
+      .max(1500, "La propuesta es demasiado larga (máximo 1500 caracteres)"),
 
     // ── 6. Redes sociales (Opcional, pero validadas si las mandan) ──
     socialLinks: z.object({
@@ -105,15 +104,80 @@ const onboardingSchema = z.object({
       youtube: z.string().trim().optional()
     }).optional()
 
-  }, { 
-    required_error: "El bloque de sponsorship es obligatorio para el onboarding" 
+  }, {
+    required_error: "El bloque de sponsorship es obligatorio para el onboarding"
   })
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/events/:id  →  updateEventSchema
+// Acepta cualquier subconjunto de campos del evento (autosave parcial).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const sponsorshipUpdateSchema = z.object({
+  isLookingForSponsors: z.boolean().optional(),
+  category: z.enum([
+    "music", "technology", "gastronomy", "culture", "business",
+    "health", "education", "entertainment", "concert",
+    "conference", "festival", "sports", "networking", "other"
+  ]).optional(),
+  budget: z.object({
+    min: z.number().min(0).optional(),
+    max: z.number().min(0).optional(),
+  }).optional(),
+  targetAudience: z.object({
+    ageRange: z.object({
+      min: z.number().min(0).optional(),
+      max: z.number().min(0).optional(),
+    }).optional(),
+    interests: z.array(z.string()).optional(),
+    expectedAttendees: z.number().min(0).optional(),
+  }).optional(),
+  collaborationTypes: z.array(
+    z.enum(["financial", "services", "brand_collaboration", "other"])
+  ).optional(),
+  pitch: z.string().trim().max(1500).optional(),
+  socialLinks: z.object({
+    whatsapp: z.string().trim().optional(),
+    instagram: z.string().trim().optional(),
+    youtube: z.string().trim().optional(),
+  }).optional(),
+  sponsorshipLevel: z.enum(["title", "gold", "silver", "bronze", "community"]).optional(),
+  sponsorshipStatus: z.enum(["open", "closed", "in_negotiation"]).optional(),
+  geographicScope: z.enum(["local", "regional", "national", "international"]).optional(),
+}).optional()
+
+const castMemberUpdateSchema = z.object({
+  image: z.string().optional(),
+  name: z.string().trim().min(1, "El nombre del miembro del elenco es obligatorio"),
+  description: z.string().optional(),
+  isHeadliner: z.boolean().optional(),
+  socialLinks: z.object({
+    instagram: z.string().optional(),
+    twitter: z.string().optional(),
+    facebook: z.string().optional(),
+    website: z.string().optional(),
+  }).optional(),
+})
+
+const agendaItemUpdateSchema = z.object({
+  title: z.string().trim().min(1, "El título del item de agenda es obligatorio"),
+  startTime: z.string().datetime().optional(),
+  endTime: z.string().datetime().optional(),
+  hostOrArtist: z.string().optional(),
+  description: z.string().optional(),
+})
 
 const updateEventSchema = z.object({
   name: z.string().trim().min(3).optional(),
   summary: z.string().max(140).optional(),
   introduction: z.string().optional(),
+
+  singleDate: z.object({
+    startTime: z.string().datetime({ message: "Formato de fecha de inicio inválido" }),
+    endTime: z.string().datetime({ message: "Formato de fecha de fin inválido" }),
+  }).optional(),
+
   location: z.object({
     type: z.enum(["venue", "online", "tba"]).optional(),
     venue: z.object({
@@ -122,17 +186,40 @@ const updateEventSchema = z.object({
       city: z.string().optional(),
       country: z.string().optional()
     }).optional(),
-    onlineUrl: z.preprocess((val) => (val === '' ? undefined : val),z.string().url("Debe ser un enlace válido").optional())
-  }, { required_error: "La ubicación es obligatoria" }).optional(),
+    onlineUrl: z.preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string().url("Debe ser un enlace válido").optional()
+    )
+  }).optional(),
+
+  usefulInfo: z.object({
+    highlights: z.object({
+      ageRestriction: z.enum([
+        "all_ages", "+12", "+16", "+18", "+21",
+        "guardian_under_14", "guardian_under_16",
+        "guardian_under_18", "guardian_under_21"
+      ]).optional(),
+      parking: z.enum(["free", "paid", "none"]).optional(),
+    }).optional(),
+    faq: z.array(z.object({
+      question: z.string(),
+      answer: z.string(),
+    })).optional(),
+  }).optional(),
+
+  cast: z.array(castMemberUpdateSchema).optional(),
+  agenda: z.array(z.array(agendaItemUpdateSchema)).optional(),
+  sponsorship: sponsorshipUpdateSchema,
+
   status: z.enum(["draft", "published", "cancelled", "finished"]).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Debes enviar al menos un campo para actualizar',
 })
 
 const applyEventSchema = z.object({
-    message: z.string({
-      required_error: "El mensaje de motivación es obligatorio",
-    }).min(1, "El mensaje no puede estar vacío"),
+  message: z.string({
+    required_error: "El mensaje de motivación es obligatorio",
+  }).min(1, "El mensaje no puede estar vacío"),
 });
 
 const updateApplicationSchema = z.object({

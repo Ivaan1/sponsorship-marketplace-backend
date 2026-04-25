@@ -206,11 +206,11 @@ const eventSchema = new mongoose.Schema(
 
       // ── Beneficios → tarjeta "#Visibilidad para la marca" ─────────────────
       perks: [{ type: String }],
-      collaborationTypes: [{ 
-        type: String, 
+      collaborationTypes: [{
+        type: String,
         enum: ["financial", "services", "brand_collaboration", "other"] // Valores internos para esos botones
       }],
-      pitch: { 
+      pitch: {
         type: String,
         trim: true
       },
@@ -263,6 +263,12 @@ const eventSchema = new mongoose.Schema(
         message: { type: String },
         appliedAt: { type: Date, default: Date.now },
       }],
+
+      // ── Alcance geográfico → filtro "Alcance" ──
+      geographicScope: {
+        type: String,
+        enum: ["local", "regional", "national", "international"],
+      },
     },
 
     status: {
