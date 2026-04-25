@@ -13,6 +13,7 @@ import {
   getEvents,
   getMyEvents,
   getEventById,
+  getEventDashboard,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -34,7 +35,8 @@ router.get('/mine', authMiddleware, getMyEvents)
 router.get('/inbox', authMiddleware, getInbox)
 
 // --- 3. Rutas por ID (Dinámicas) ---
-router.get('/:id', getEventById)
+router.get('/:id', getEventById) // Vista pública 
+router.get('/:id/dashboard', authMiddleware, getEventDashboard) // Versión con más detalles para el panel de control del evento
 
 // --- 4. Gestión de Eventos (Creación, Edición, Borrado) ---
 router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)

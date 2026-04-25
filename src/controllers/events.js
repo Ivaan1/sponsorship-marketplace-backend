@@ -167,8 +167,12 @@ async function getMyEvents(req, res) {
 async function getEventById(req, res) {
   try {
     const event = await eventsModel
-      .findById(req.params.id)
-      .populate('organizer', 'name email')
+      .findByIdAndUpdate(
+        req.params.id,
+        { $inc: { "analytics.views": 1 } },
+        { new: true }
+      )
+      .populate('organizer', 'name email');
 
     if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
 
@@ -196,6 +200,53 @@ async function getEventById(req, res) {
         console.error('Error en getEventById:', error)
         handleHttpError(res, error)
     }
+}
+
+async function getEventDashboard(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id || req.user.id;
+
+    const event = await eventsModel.findById(id);
+
+    if (!event) return res.status(404).json({ message: 'Evento no encontrado' });
+
+    if (event.organizer.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
+    const acceptedSponsors = event.sponsorship?.sponsorsApplied?.filter(s => s.status === 'accepted') || [];
+    const patrocinadoresCount = acceptedSponsors.length;
+
+    const budgetMax = event.sponsorship?.budget?.max || 0;
+    const financiacionTotal = patrocinadoresCount * budgetMax;
+
+    const entradasVendidas = event.tickets?.reduce((acc, t) => acc + (t.soldQuantity || 0), 0) || 0;
+    const ventasNetas = event.tickets?.reduce((acc, t) => acc + ((t.soldQuantity || 0) * t.price), 0) || 0;
+
+    const stats = {
+      ventasNetas,
+      entradasVendidas,
+      visitas: event.analytics?.views || 0,
+      patrocinadoresCount,
+      financiacionTotal
+    };
+
+    return res.status(200).json({
+      data: {
+        stats,
+        sponsors: event.sponsorship?.sponsorsApplied || [],
+        eventInfo: {
+          name: event.name,
+          status: event.status
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Dashboard:', error);
+    return res.status(500).json({ message: 'Error interno' });
+  }
 }
 
 async function createEvent(req, res) {
@@ -357,6 +408,7 @@ export {
     getEvents, 
     getMyEvents, 
     getEventById, 
+    getEventDashboard,
     createEvent, 
     updateEvent, 
     deleteEvent, 

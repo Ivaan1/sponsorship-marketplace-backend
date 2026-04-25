@@ -81,6 +81,7 @@ const ticketSchema = new mongoose.Schema({
   },
   price: { type: Number, default: 0 },
   availableQuantity: { type: Number },
+  soldQuantity: { type: Number, default: 0 },
   saleEnds: {
     reference: { type: String, enum: ["before_event", "before_start"] },
     amount: { type: Number },
@@ -271,10 +272,13 @@ const eventSchema = new mongoose.Schema(
       },
     },
 
-    status: {
+    status: { 
       type: String,
       enum: ["draft", "published", "cancelled", "finished"],
       default: "draft",
+    },
+    analytics: {
+        views: { type: Number, default: 0 }
     },
   },
   { timestamps: true }
