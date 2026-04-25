@@ -41,21 +41,21 @@ async function getEvents(req, res) {
         if (minBudget) filter['sponsorship.budget.max'] = { $gte: Number(minBudget) }
         if (maxBudget) filter['sponsorship.budget.min'] = { $lte: Number(maxBudget) }
 
-        if (minReach || maxReach) {
-            const reachFilter = {}
-            if (minReach) reachFilter.$gte = Number(minReach)
-            if (maxReach) reachFilter.$lte = Number(maxReach)
-            filter['sponsorship.targetAudience.expectedAttendees'] = reachFilter
-        }
+    if (minReach || maxReach) {
+      const reachFilter = {}
+      if (minReach) reachFilter.$gte = Number(minReach)
+      if (maxReach) reachFilter.$lte = Number(maxReach)
+      filter['sponsorship.targetAudience.expectedAttendees'] = reachFilter
+    }
 
         const events = await eventsModel
             .find(filter)
             .populate('organizer', 'name email')
             .lean()
 
-        if (!events.length) {
-            return res.status(200).json({ data: [], total: 0, page: Number(page), pages: 0 })
-        }
+    if (!events.length) {
+      return res.status(200).json({ data: [], total: 0, page: Number(page), pages: 0 })
+    }
 
         let sponsor = null
         if (req.user?._id) {
@@ -89,35 +89,88 @@ async function getEvents(req, res) {
         const start = (safePage - 1) * safeLimit
         const paginated = ranked.slice(start, start + safeLimit)
 
-        return res.status(200).json({ data: paginated, total, page: safePage, pages, limit: safeLimit })
+    return res.status(200).json({ data: paginated, total, page: safePage, pages, limit: safeLimit })
 
-    } catch (error) {
-        console.error('Error en getEvents:', error)
-        handleHttpError(res, error)
-    }
+  } catch (error) {
+    console.error('Error en getEvents:', error)
+    handleHttpError(res, error)
+  }
 }
+
+
+// ── GET /api/events/mine ─────────────────────────────────────────────────────
+// Devuelve los eventos creados por el usuario autenticado (creador).
+// Incluye eventos en cualquier estado (draft, published, cancelled, finished)
+// para que el creador pueda ver también sus borradores.
 
 async function getMyEvents(req, res) {
-    try {
-        const events = await eventsModel
-            .find({ organizer: req.user._id })
-            .populate('organizer', 'name email')
-            .sort({ createdAt: -1 })
+  try {
+    const {
+      q = '',
+      category,
+      minBudget, maxBudget,
+      level,
+      sponsorshipStatus,
+      page = 1,
+      limit = 12,
+    } = req.query
 
-        return res.status(200).json({ data: events, total: events.length })
-    } catch (error) {
-        console.error('Error en getMyEvents:', error)
-        handleHttpError(res, 'ERROR_GETTING_MY_EVENTS', 500)
+    // ── 1. Filtro: solo eventos del creador logueado ───────────────────
+    const filter = {
+      organizer: req.user._id,
     }
+
+    if (q.trim()) {
+      filter.$or = [
+        { name: { $regex: q.trim(), $options: 'i' } },
+        { summary: { $regex: q.trim(), $options: 'i' } },
+      ]
+    }
+
+    if (category) filter['sponsorship.category'] = category
+    if (level) filter['sponsorship.sponsorshipLevel'] = level
+    if (sponsorshipStatus) filter['sponsorship.sponsorshipStatus'] = sponsorshipStatus
+
+    if (minBudget) filter['sponsorship.budget.max'] = { $gte: Number(minBudget) }
+    if (maxBudget) filter['sponsorship.budget.min'] = { $lte: Number(maxBudget) }
+
+    // ── 2. Consulta ────────────────────────────────────────────────────
+    const events = await eventsModel
+      .find(filter)
+      .populate('organizer', 'name email')
+      .sort({ createdAt: -1 })   // Más recientes primero
+      .lean()
+
+    // ── 3. Paginación ──────────────────────────────────────────────────
+    const safePage = Math.max(1, Number(page))
+    const safeLimit = Math.min(Math.max(1, Number(limit)), 48)
+    const total = events.length
+    const pages = Math.ceil(total / safeLimit)
+    const start = (safePage - 1) * safeLimit
+    const paginated = events.slice(start, start + safeLimit)
+
+    return res.status(200).json({
+      data: paginated,
+      total,
+      page: safePage,
+      pages,
+      limit: safeLimit,
+    })
+
+  } catch (error) {
+    console.error('Error en getMyEvents:', error)
+    handleHttpError(res, error)
+  }
 }
 
-async function getEventById(req, res) {
-    try {
-        const event = await eventsModel
-            .findById(req.params.id)
-            .populate('organizer', 'name email')
 
-        if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
+async function getEventById(req, res) {
+  try {
+    const event = await eventsModel
+      .findById(req.params.id)
+      .populate('organizer', 'name email')
+
+    if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
 
         if (event.status === 'published') {
             return res.status(200).json(event)
