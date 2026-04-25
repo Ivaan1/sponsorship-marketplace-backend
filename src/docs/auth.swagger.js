@@ -24,9 +24,11 @@
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: sponsor@mail.com
  *               password:
  *                 type: string
+ *                 minLength: 8
  *                 example: "12345678"
  *               role:
  *                 type: string
@@ -35,7 +37,7 @@
  *       201:
  *         description: Usuario registrado correctamente
  *       400:
- *         description: Error de validación
+ *         description: Error de validación o usuario ya existente
  *       500:
  *         description: Error interno
  */
@@ -58,13 +60,17 @@
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: sponsor@mail.com
  *               password:
  *                 type: string
+ *                 minLength: 1
  *                 example: "12345678"
  *     responses:
  *       200:
  *         description: Login correcto
  *       401:
  *         description: Credenciales incorrectas
+ *       404:
+ *         description: Usuario no encontrado
  */
