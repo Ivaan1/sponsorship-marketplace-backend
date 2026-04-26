@@ -2,6 +2,7 @@ import { eventsModel, usersModel } from '../models/index.js'
 import { handleHttpError } from '../utils/handleErrors.js'
 import { rankEvents } from '../utils/rankEvents.js'
 import { verifyToken } from '../utils/handleJWT.js'
+import mongoose from 'mongoose'
 
 // ── GET /api/events ──────────────────────────────────────────────────────────
 // Motor de búsqueda — filtra y ordena eventos por relevancia para el sponsor.
@@ -374,12 +375,15 @@ async function updateApplication(req, res) {
         const { id, appId } = req.params
         const { status } = req.body
         if (!['accepted', 'rejected'].includes(status)) return handleHttpError(res, 'INVALID_STATUS', 400)
+        if (!mongoose.Types.ObjectId.isValid(id)) return handleHttpError(res, 'INVALID_EVENT_ID', 400)
+        if (!mongoose.Types.ObjectId.isValid(appId)) return handleHttpError(res, 'INVALID_APPLICATION_ID', 400)
 
         const event = await eventsModel.findOne({ _id: id, organizer: req.user._id })
         if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
 
         const application = event.sponsorship.sponsorsApplied.id(appId)
         if (!application) return handleHttpError(res, 'APPLICATION_NOT_FOUND', 404)
+        if (application.status !== 'pending') return handleHttpError(res, 'APPLICATION_ALREADY_PROCESSED', 400)
 
         application.status = status
         await event.save()
@@ -391,7 +395,7 @@ async function updateApplication(req, res) {
         }
         return res.status(200).json({ status, ...(sponsorContact && { sponsorContact }) })
     } catch (error) {
-        console.log('Error en updateApplication:', error)
+        console.error('Error en updateApplication:', error)
         handleHttpError(res, 'ERROR_UPDATING_APPLICATION', 500)
     }
 }
