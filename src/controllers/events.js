@@ -176,8 +176,28 @@ async function getEventById(req, res) {
 
     if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
 
+    const SCOPE_METRICS = {
+      local:         { localImpact: 95, internationalReach: 5 },
+      regional:      { localImpact: 80, internationalReach: 20 },
+      national:      { localImpact: 60, internationalReach: 40 },
+      international: { localImpact: 15, internationalReach: 95 }
+    };
+
+    const scope = event.sponsorship?.geographicScope || 'local';
+    const metrics = SCOPE_METRICS[scope];
+
+
+    const eventData = event.toObject();
+    
+
+    eventData.calculatedImpact = {
+      local: metrics.localImpact,
+      international: metrics.internationalReach
+    };
+    console.log('eventData:', eventData)
+
         if (event.status === 'published') {
-            return res.status(200).json(event)
+            return res.status(200).json(eventData)
         }
 
         const authHeader = req.headers.authorization
@@ -195,7 +215,7 @@ async function getEventById(req, res) {
             return handleHttpError(res, 'UNAUTHORIZED', 403)
         }
 
-        return res.status(200).json(event)
+        return res.status(200).json(eventData)
     } catch (error) {
         console.error('Error en getEventById:', error)
         handleHttpError(res, error)
