@@ -29,3 +29,57 @@ El proyecto sigue una estructura limpia MVC:
  ┣ 📂 validators   # Middlewares de validación de datos (express-validator)
  ┗ 📜 app.js       # Archivo principal de configuración de Express
 ```
+
+## ⚙️ Instalación
+
+### 1) Prerrequisitos
+
+- Node.js 18+ (recomendado 20+)
+- npm (incluido con Node.js)
+- Instancia de MongoDB local o remota
+
+### 2) Clonar repositorio
+
+```bash
+git clone <url-del-repositorio>
+cd sponsorship-marketplace-backend
+```
+
+### 3) Instalar dependencias
+
+```bash
+npm install
+```
+
+## 🔐 Configuración de entorno (`.env`)
+
+Crear un archivo `.env` en la raíz del proyecto con estas variables:
+
+```env
+PORT=3000
+DB_URI=mongodb://localhost:27017/sponsorship_marketplace
+SECRET_JWT=tu_clave_secreta_jwt
+```
+
+Notas:
+- `PORT` es opcional (por defecto `3000`).
+- `DB_URI` debe apuntar a tu base de datos MongoDB.
+- `SECRET_JWT` se usa para firmar y validar tokens.
+
+## ▶️ Ejecución del proyecto
+
+### Desarrollo (con recarga automática)
+
+```bash
+npm run dev
+```
+
+### Producción
+
+```bash
+npm start
+```
+
+Al iniciar correctamente, la API queda disponible en:
+- `http://localhost:3000` (o el `PORT` configurado)
+- `http://localhost:3000/api-docs` para Swagger
