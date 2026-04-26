@@ -22,7 +22,7 @@ function verifyToken(tokenJwt){
     try {
         return jwt.verify(tokenJwt, JWT_SECRET)
     } catch(e) {
-        console.log(e)
+        console.error('Error en verifyToken:', e)
     }
 }
 
@@ -46,7 +46,7 @@ function verifyRecoveryToken(tokenJwt){
         if(payload.purpose !== "password_reset") throw new Error("Token inválido para recuperación");
         return payload;
     } catch(e){
-        console.log(e);
+        console.error('Error en verifyRecoveryToken:', e);
         return null;
     }
 }
