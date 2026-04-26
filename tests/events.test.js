@@ -51,6 +51,31 @@ function buildEvent(organizerId) {
   }
 }
 
+async function createPublishedEvent(ownerToken, organizerId, overrides = {}) {
+  const created = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send({
+      ...buildEvent(organizerId),
+      ...overrides,
+    })
+
+  await request(app)
+    .patch(`/api/events/${created.body.data._id}/onboarding`)
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send({
+      sponsorship: {
+        category: 'music',
+        targetAudience: { expectedAttendees: 1000 },
+        collaborationTypes: ['financial'],
+        budget: { min: 1000, max: 5000 },
+        pitch: 'Pitch suficientemente largo para validar onboarding correctamente.',
+      },
+    })
+
+  return created.body.data._id
+}
+
 // ─── POST /api/events ─────────────────────────────────────────────────────────
 
 describe('POST /api/events', () => {
@@ -332,5 +357,274 @@ describe('DELETE /api/events/:id', () => {
     expect(res.status).toBe(200)
     expect(res.body.data.status).toBe('cancelled')
     expect(res.body.data.sponsorship.isLookingForSponsors).toBe(false)
+  })
+})
+
+describe('GET /api/events/:id/dashboard', () => {
+  it('debería devolver dashboard al organizer del evento', async () => {
+    const owner = await registerAndLogin('creator')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    const res = await request(app)
+      .get(`/api/events/${eventId}/dashboard`)
+      .set('Authorization', `Bearer ${owner.token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('data')
+    expect(res.body.data).toHaveProperty('stats')
+    expect(res.body.data.eventInfo.name).toBe('Festival Test 2025')
+  })
+
+  it('debería rechazar dashboard para usuario no owner', async () => {
+    const owner = await registerAndLogin('creator')
+    const other = await registerAndLogin('creator')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    const res = await request(app)
+      .get(`/api/events/${eventId}/dashboard`)
+      .set('Authorization', `Bearer ${other.token}`)
+
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('POST /api/events/:id/apply', () => {
+  it('debería permitir a un sponsor aplicar a evento publicado', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    const res = await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Nos encaja este evento y queremos patrocinarlo.' })
+
+    expect(res.status).toBe(201)
+    expect(res.body.success).toBe(true)
+  })
+
+  it('debería rechazar aplicación duplicada del mismo sponsor', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Primera solicitud' })
+
+    const duplicated = await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Segunda solicitud' })
+
+    expect(duplicated.status).toBe(409)
+    expect(duplicated.text).toBe('ALREADY_APPLIED')
+  })
+
+  it('debería rechazar si aplica un creator', async () => {
+    const owner = await registerAndLogin('creator')
+    const creator = await registerAndLogin('creator')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    const res = await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${creator.token}`)
+      .send({ message: 'Quiero aplicar' })
+
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('GET /api/events/inbox', () => {
+  it('debería devolver solicitudes para un creator', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para el inbox del creator.' })
+
+    const res = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${owner.token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.total).toBe(1)
+    expect(res.body.data[0].eventId).toBe(eventId)
+    expect(res.body.data[0].sponsor).toHaveProperty('id')
+  })
+
+  it('debería devolver aplicaciones del sponsor sin contacto cuando está pending', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para inbox sponsor.' })
+
+    const res = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${sponsor.token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.total).toBe(1)
+    expect(res.body.data[0].status).toBe('pending')
+    expect(res.body.data[0].creatorContact).toBeNull()
+  })
+})
+
+describe('PATCH /api/events/:id/applications/:appId', () => {
+  it('debería aceptar una aplicación y devolver contacto del sponsor', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para ser aprobada.' })
+
+    const creatorInbox = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${owner.token}`)
+    const appId = creatorInbox.body.data[0].applicationId
+
+    const res = await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.status).toBe('accepted')
+    expect(res.body.sponsorContact).toHaveProperty('email')
+  })
+
+  it('debería rechazar actualización si el usuario no es creator', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para prueba de permisos.' })
+
+    const creatorInbox = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${owner.token}`)
+    const appId = creatorInbox.body.data[0].applicationId
+
+    const res = await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(403)
+  })
+
+  it('debería devolver 404 si el evento no existe', async () => {
+    const owner = await registerAndLogin('creator')
+
+    const res = await request(app)
+      .patch('/api/events/507f1f77bcf86cd799439099/applications/507f1f77bcf86cd799439098')
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(404)
+    expect(res.text).toBe('EVENT_NOT_FOUND')
+  })
+
+  it('debería devolver 400 si el event id tiene formato inválido', async () => {
+    const owner = await registerAndLogin('creator')
+
+    const res = await request(app)
+      .patch('/api/events/123/applications/507f1f77bcf86cd799439098')
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(400)
+    expect(res.text).toBe('INVALID_EVENT_ID')
+  })
+
+  it('debería devolver 400 si el appId tiene formato inválido', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para validar appId inválido.' })
+
+    const res = await request(app)
+      .patch(`/api/events/${eventId}/applications/123`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(400)
+    expect(res.text).toBe('INVALID_APPLICATION_ID')
+  })
+
+  it('debería rechazar accepted cuando la aplicación ya está rejected', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para test de transición inválida.' })
+
+    const creatorInbox = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${owner.token}`)
+    const appId = creatorInbox.body.data[0].applicationId
+
+    await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'rejected' })
+
+    const res = await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    expect(res.status).toBe(400)
+    expect(res.text).toBe('APPLICATION_ALREADY_PROCESSED')
+  })
+
+  it('debería rechazar rejected cuando la aplicación ya está accepted', async () => {
+    const owner = await registerAndLogin('creator')
+    const sponsor = await registerAndLogin('sponsor')
+    const eventId = await createPublishedEvent(owner.token, owner.user._id)
+
+    await request(app)
+      .post(`/api/events/${eventId}/apply`)
+      .set('Authorization', `Bearer ${sponsor.token}`)
+      .send({ message: 'Aplicación para transición accepted->rejected.' })
+
+    const creatorInbox = await request(app)
+      .get('/api/events/inbox')
+      .set('Authorization', `Bearer ${owner.token}`)
+    const appId = creatorInbox.body.data[0].applicationId
+
+    await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'accepted' })
+
+    const res = await request(app)
+      .patch(`/api/events/${eventId}/applications/${appId}`)
+      .set('Authorization', `Bearer ${owner.token}`)
+      .send({ status: 'rejected' })
+
+    expect(res.status).toBe(400)
+    expect(res.text).toBe('APPLICATION_ALREADY_PROCESSED')
   })
 })
