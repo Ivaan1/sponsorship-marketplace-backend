@@ -1,5 +1,7 @@
-const jwt = require("jsonwebtoken")
-require('dotenv').config(); 
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config({ quiet: true })
 const JWT_SECRET = process.env.SECRET_JWT
 
 function tokenSign(user){
@@ -20,7 +22,7 @@ function verifyToken(tokenJwt){
     try {
         return jwt.verify(tokenJwt, JWT_SECRET)
     } catch(e) {
-        console.log(e)
+        console.error('Error en verifyToken:', e)
     }
 }
 
@@ -44,14 +46,9 @@ function verifyRecoveryToken(tokenJwt){
         if(payload.purpose !== "password_reset") throw new Error("Token inválido para recuperación");
         return payload;
     } catch(e){
-        console.log(e);
+        console.error('Error en verifyRecoveryToken:', e);
         return null;
     }
 }
 
-module.exports = {
-    tokenSign, 
-    verifyToken,
-    tokenSignRecovery,
-    verifyRecoveryToken
-    }
+export { tokenSign, verifyToken, tokenSignRecovery, verifyRecoveryToken }

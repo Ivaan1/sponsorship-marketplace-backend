@@ -1,38 +1,26 @@
-const { eventsModel, usersModel } = require('../models')
-const { handleHttpError }         = require('../utils/handleErrors')
-const { rankEvents }              = require('../utils/rankEvents')
-
+import { eventsModel, usersModel } from '../models/index.js'
+import { handleHttpError } from '../utils/handleErrors.js'
+import { rankEvents } from '../utils/rankEvents.js'
+import { verifyToken } from '../utils/handleJWT.js'
+import mongoose from 'mongoose'
 
 // ── GET /api/events ──────────────────────────────────────────────────────────
 // Motor de búsqueda — filtra y ordena eventos por relevancia para el sponsor.
-//
-// Query params:
-//  q                → búsqueda libre (nombre, summary)
-//  category         → tipo de evento (music, concert, etc.)
-//  minAge / maxAge  → rango de edad del público
-//  minBudget / maxBudget → rango de presupuesto
-//  level            → nivel de patrocinio (gold, silver, etc.)
-//  sponsorshipStatus→ open | in_negotiation | closed
-//  minReach/maxReach→ asistentes esperados
-//  sortBy           → relevance | attendees | budgetAsc | budgetDesc
-//  page / limit     → paginación
-
 async function getEvents(req, res) {
     try {
         const {
-            q                  = '',
+            q = '',
             category,
-            minAge,   maxAge,
+            minAge, maxAge,
             minBudget, maxBudget,
             level,
             sponsorshipStatus,
-            minReach,  maxReach,
-            sortBy             = 'relevance',
-            page               = 1,
-            limit              = 12,
+            minReach, maxReach,
+            sortBy = 'relevance',
+            page = 1,
+            limit = 12,
         } = req.query
 
-        // ── 1. Filtro MongoDB ──────────────────────────────────────────────
         const filter = {
             status: 'published',
             'sponsorship.isLookingForSponsors': true,
@@ -40,46 +28,42 @@ async function getEvents(req, res) {
 
         if (q.trim()) {
             filter.$or = [
-                { name:    { $regex: q.trim(), $options: 'i' } },
+                { name: { $regex: q.trim(), $options: 'i' } },
                 { summary: { $regex: q.trim(), $options: 'i' } },
             ]
         }
 
-        if (category)filter['sponsorship.category'] = category
-        if (level)filter['sponsorship.sponsorshipLevel'] = level
+        if (category) filter['sponsorship.category'] = category
+        if (level) filter['sponsorship.sponsorshipLevel'] = level
         if (sponsorshipStatus) filter['sponsorship.sponsorshipStatus'] = sponsorshipStatus
 
-        if (minAge)filter['sponsorship.targetAudience.ageRange.max'] = { $gte: Number(minAge) }
-        if (maxAge)filter['sponsorship.targetAudience.ageRange.min'] = { $lte: Number(maxAge) }
+        if (minAge) filter['sponsorship.targetAudience.ageRange.max'] = { $gte: Number(minAge) }
+        if (maxAge) filter['sponsorship.targetAudience.ageRange.min'] = { $lte: Number(maxAge) }
         if (minBudget) filter['sponsorship.budget.max'] = { $gte: Number(minBudget) }
         if (maxBudget) filter['sponsorship.budget.min'] = { $lte: Number(maxBudget) }
 
-        if (minReach || maxReach) {
-            const reachFilter = {}
-            if (minReach) reachFilter.$gte = Number(minReach)
-            if (maxReach) reachFilter.$lte = Number(maxReach)
-            filter['sponsorship.targetAudience.expectedAttendees'] = reachFilter
-        }
+    if (minReach || maxReach) {
+      const reachFilter = {}
+      if (minReach) reachFilter.$gte = Number(minReach)
+      if (maxReach) reachFilter.$lte = Number(maxReach)
+      filter['sponsorship.targetAudience.expectedAttendees'] = reachFilter
+    }
 
-        // ── 2. Consulta a MongoDB ──────────────────────────────────────────
         const events = await eventsModel
             .find(filter)
             .populate('organizer', 'name email')
             .lean()
 
-        if (!events.length) {
-            return res.status(200).json({ data: [], total: 0, page: Number(page), pages: 0 })
-        }
+    if (!events.length) {
+      return res.status(200).json({ data: [], total: 0, page: Number(page), pages: 0 })
+    }
 
-        // ── 3. Perfil del sponsor (si está autenticado) ────────────────────
         let sponsor = null
-        if (req.user?.id) {
-            sponsor = await usersModel.findById(req.user.id).lean()
+        if (req.user?._id) {
+            sponsor = await usersModel.findById(req.user._id).lean()
         }
 
-        // ── 4. Ranking ─────────────────────────────────────────────────────
         let ranked
-
         if (sortBy === 'relevance') {
             ranked = rankEvents(events, sponsor)
         } else if (sortBy === 'attendees') {
@@ -99,76 +83,360 @@ async function getEvents(req, res) {
             ranked = events
         }
 
-        // ── 5. Paginación ──────────────────────────────────────────────────
-        const safePage  = Math.max(1, Number(page))
+        const safePage = Math.max(1, Number(page))
         const safeLimit = Math.min(Math.max(1, Number(limit)), 48)
         const total = ranked.length
         const pages = Math.ceil(total / safeLimit)
         const start = (safePage - 1) * safeLimit
         const paginated = ranked.slice(start, start + safeLimit)
 
-        return res.status(200).json({ data: paginated, total, page: safePage, pages, limit: safeLimit })
+    return res.status(200).json({ data: paginated, total, page: safePage, pages, limit: safeLimit })
 
-    } catch (error) {
-        console.error('Error en getEvents:', error)
-        handleHttpError(res, error)
-    }
+  } catch (error) {
+    console.error('Error en getEvents:', error)
+    handleHttpError(res, error)
+  }
 }
 
-// ── GET /api/events/:id ──────────────────────────────────────────────────────
-// Devuelve el detalle completo de un evento para la ficha.
+
+// ── GET /api/events/mine ─────────────────────────────────────────────────────
+// Devuelve los eventos creados por el usuario autenticado (creador).
+// Incluye eventos en cualquier estado (draft, published, cancelled, finished)
+// para que el creador pueda ver también sus borradores.
+
+async function getMyEvents(req, res) {
+  try {
+    const {
+      q = '',
+      category,
+      minBudget, maxBudget,
+      level,
+      sponsorshipStatus,
+      page = 1,
+      limit = 12,
+    } = req.query
+
+    // ── 1. Filtro: solo eventos del creador logueado ───────────────────
+    const filter = {
+      organizer: req.user._id,
+    }
+
+    if (q.trim()) {
+      filter.$or = [
+        { name: { $regex: q.trim(), $options: 'i' } },
+        { summary: { $regex: q.trim(), $options: 'i' } },
+      ]
+    }
+
+    if (category) filter['sponsorship.category'] = category
+    if (level) filter['sponsorship.sponsorshipLevel'] = level
+    if (sponsorshipStatus) filter['sponsorship.sponsorshipStatus'] = sponsorshipStatus
+
+    if (minBudget) filter['sponsorship.budget.max'] = { $gte: Number(minBudget) }
+    if (maxBudget) filter['sponsorship.budget.min'] = { $lte: Number(maxBudget) }
+
+    // ── 2. Consulta ────────────────────────────────────────────────────
+    const events = await eventsModel
+      .find(filter)
+      .populate('organizer', 'name email')
+      .sort({ createdAt: -1 })   // Más recientes primero
+      .lean()
+
+    // ── 3. Paginación ──────────────────────────────────────────────────
+    const safePage = Math.max(1, Number(page))
+    const safeLimit = Math.min(Math.max(1, Number(limit)), 48)
+    const total = events.length
+    const pages = Math.ceil(total / safeLimit)
+    const start = (safePage - 1) * safeLimit
+    const paginated = events.slice(start, start + safeLimit)
+
+    return res.status(200).json({
+      data: paginated,
+      total,
+      page: safePage,
+      pages,
+      limit: safeLimit,
+    })
+
+  } catch (error) {
+    console.error('Error en getMyEvents:', error)
+    handleHttpError(res, error)
+  }
+}
+
 
 async function getEventById(req, res) {
-    try {
-        const event = await eventsModel
-            .findById(req.params.id)
-            .populate('organizer', 'name email')
+  try {
+    const event = await eventsModel
+      .findByIdAndUpdate(
+        req.params.id,
+        { $inc: { "analytics.views": 1 } },
+        { new: true }
+      )
+      .populate('organizer', 'name email');
 
-        if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
+    if (!event) return res.status(404).json({ message: 'Evento no encontrado' })
 
-        return res.status(200).json(event)
+    const SCOPE_METRICS = {
+      local:         { localImpact: 95, internationalReach: 5 },
+      regional:      { localImpact: 80, internationalReach: 20 },
+      national:      { localImpact: 60, internationalReach: 40 },
+      international: { localImpact: 15, internationalReach: 95 }
+    };
 
+    const scope = event.sponsorship?.geographicScope || 'local';
+    const metrics = SCOPE_METRICS[scope];
+
+
+    const eventData = event.toObject();
+    
+
+    eventData.calculatedImpact = {
+      local: metrics.localImpact,
+      international: metrics.internationalReach
+    };
+
+        if (event.status === 'published') {
+            return res.status(200).json(eventData)
+        }
+
+        const authHeader = req.headers.authorization
+        if (!authHeader) return handleHttpError(res, 'NO_TOKEN_FOUND', 401)
+
+        const token = authHeader.split(' ').pop()
+        const dataToken = await verifyToken(token)
+            
+        const userId = dataToken._id || dataToken.id;
+        if (!userId) return handleHttpError(res, 'INVALID_TOKEN', 401)
+    
+        const organizerId = event.organizer._id || event.organizer;
+    
+        if (organizerId.toString() !== userId.toString()) {
+            return handleHttpError(res, 'UNAUTHORIZED', 403)
+        }
+
+        return res.status(200).json(eventData)
     } catch (error) {
         console.error('Error en getEventById:', error)
         handleHttpError(res, error)
     }
 }
 
-// ── POST /api/events ─────────────────────────────────────────────────────────
-// Solo para pruebas — lo eliminará el squad del organizador cuando
-// implemente su propio controlador.
+async function getEventDashboard(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id || req.user.id;
+
+    const event = await eventsModel.findById(id);
+
+    if (!event) return res.status(404).json({ message: 'Evento no encontrado' });
+
+    if (event.organizer.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
+    const acceptedSponsors = event.sponsorship?.sponsorsApplied?.filter(s => s.status === 'accepted') || [];
+    const patrocinadoresCount = acceptedSponsors.length;
+
+    const budgetMax = event.sponsorship?.budget?.max || 0;
+    const financiacionTotal = patrocinadoresCount * budgetMax;
+
+    const entradasVendidas = event.tickets?.reduce((acc, t) => acc + (t.soldQuantity || 0), 0) || 0;
+    const ventasNetas = event.tickets?.reduce((acc, t) => acc + ((t.soldQuantity || 0) * t.price), 0) || 0;
+
+    const stats = {
+      ventasNetas,
+      entradasVendidas,
+      visitas: event.analytics?.views || 0,
+      patrocinadoresCount,
+      financiacionTotal
+    };
+
+    return res.status(200).json({
+      data: {
+        stats,
+        sponsors: event.sponsorship?.sponsorsApplied || [],
+        eventInfo: {
+          name: event.name,
+          status: event.status
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Dashboard:', error);
+    return res.status(500).json({ message: 'Error interno' });
+  }
+}
 
 async function createEvent(req, res) {
     try {
-        const { body } = req
-        const data = await eventsModel.create(body)
-        res.status(201).json(data)
+        const eventData = req.body
+        eventData.organizer = req.user._id
+        eventData.status = "draft"
+
+        const newEvent = await eventsModel.create(eventData)
+        return res.status(201).json({ success: true, data: newEvent })
     } catch (error) {
-        console.error('Error creando el evento:', error)
+        handleHttpError(res, 'ERROR_CREATING_EVENT', 500)
+    }
+}
+
+async function updateEvent(req, res) {
+    try {
+        const { id } = req.params
+        const event = await eventsModel.findById(id)
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+        if (event.organizer.toString() !== req.user._id.toString()) return handleHttpError(res, 'UNAUTHORIZED', 403)
+
+        const updatedEvent = await eventsModel.findByIdAndUpdate(id, { $set: req.body }, { returnDocument: 'after', runValidators: true })
+        return res.status(200).json({ success: true, data: updatedEvent })
+    } catch (error) {
+        handleHttpError(res, 'ERROR_UPDATING_EVENT', 500)
+    }
+}
+
+async function deleteEvent(req, res) {
+    try {
+        const { id } = req.params
+        const event = await eventsModel.findById(id)
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+        if (event.organizer.toString() !== req.user._id.toString()) return handleHttpError(res, 'UNAUTHORIZED', 403)
+
+        const deletedEvent = await eventsModel.findByIdAndUpdate(id, {
+            $set: { status: 'cancelled', 'sponsorship.isLookingForSponsors': false }
+        }, { returnDocument: 'after' })
+        return res.status(200).json({ success: true, data: deletedEvent })
+    } catch (error) {
+        handleHttpError(res, 'ERROR_DELETING_EVENT', 500)
+    }
+}
+
+async function submitOnboarding(req, res) {
+    try {
+        const { id } = req.params
+        const sponsorshipData = req.body.sponsorship
+        const event = await eventsModel.findById(id)
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+        if (event.organizer.toString() !== req.user._id.toString()) return handleHttpError(res, 'UNAUTHORIZED', 403)
+
+        sponsorshipData.isLookingForSponsors = true
+        sponsorshipData.sponsorshipStatus = "open"
+
+        const updatedEvent = await eventsModel.findByIdAndUpdate(id, {
+            $set: { sponsorship: sponsorshipData, status: "published" }
+        }, { returnDocument: 'after', runValidators: true })
+
+        return res.status(200).json({ success: true, data: updatedEvent })
+    } catch (error) {
+        handleHttpError(res, 'ERROR_SUBMITTING_ONBOARDING', 500)
+    }
+}
+
+async function getInbox(req, res) {
+    try {
+        const { role, _id } = req.user
+        if (role === 'creator') {
+            const events = await eventsModel.find({ organizer: _id })
+                .select('name sponsorship.sponsorsApplied')
+                .populate({ path: 'sponsorship.sponsorsApplied.sponsor', select: 'name sponsorProfile.companyName' })
+                .lean()
+
+            const inbox = events.flatMap(event => (event.sponsorship?.sponsorsApplied ?? []).map(app => ({
+                eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt,
+                sponsor: { id: app.sponsor?._id, name: app.sponsor?.name, companyName: app.sponsor?.sponsorProfile?.companyName }
+            })))
+            inbox.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
+            return res.status(200).json({ data: inbox, total: inbox.length })
+        } else if (role === 'sponsor') {
+            const events = await eventsModel.find({ 'sponsorship.sponsorsApplied.sponsor': _id })
+                .select('name organizer sponsorship.sponsorsApplied')
+                .populate({ path: 'organizer', select: 'name email' }).lean()
+
+            const inbox = events.flatMap(event => {
+                const myApps = (event.sponsorship?.sponsorsApplied ?? []).filter(app => app.sponsor.toString() === _id.toString() && app.status !== 'rejected')
+                return myApps.map(app => ({
+                    eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt,
+                    creatorContact: app.status === 'accepted' ? { name: event.organizer?.name, email: event.organizer?.email } : null
+                }))
+            })
+            inbox.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
+            return res.status(200).json({ data: inbox, total: inbox.length })
+        }
+        return handleHttpError(res, 'FORBIDDEN', 403)
+    } catch (error) {
         handleHttpError(res, error)
     }
 }
 
+async function updateApplication(req, res) {
+    try {
+        if (req.user.role !== 'creator') return handleHttpError(res, 'FORBIDDEN', 403)
+        const { id, appId } = req.params
+        const { status } = req.body
+        if (!['accepted', 'rejected'].includes(status)) return handleHttpError(res, 'INVALID_STATUS', 400)
+        if (!mongoose.Types.ObjectId.isValid(id)) return handleHttpError(res, 'INVALID_EVENT_ID', 400)
+        if (!mongoose.Types.ObjectId.isValid(appId)) return handleHttpError(res, 'INVALID_APPLICATION_ID', 400)
 
-const getEventByName = async (req, res) => {
-  try {
-    const { name } = req.params;
-    const event = await eventsModel.findOne({ name });
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Evento no encontrado' });
+        const event = await eventsModel.findOne({ _id: id, organizer: req.user._id })
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+
+        const application = event.sponsorship.sponsorsApplied.id(appId)
+        if (!application) return handleHttpError(res, 'APPLICATION_NOT_FOUND', 404)
+        if (application.status !== 'pending') return handleHttpError(res, 'APPLICATION_ALREADY_PROCESSED', 400)
+
+        application.status = status
+        await event.save()
+
+        let sponsorContact = null
+        if (status === 'accepted') {
+            const sponsor = await usersModel.findById(application.sponsor).select('name email sponsorProfile.companyName').lean()
+            sponsorContact = { name: sponsor.name, email: sponsor.email, companyName: sponsor.sponsorProfile?.companyName }
+        }
+        return res.status(200).json({ status, ...(sponsorContact && { sponsorContact }) })
+    } catch (error) {
+        console.error('Error en updateApplication:', error)
+        handleHttpError(res, 'ERROR_UPDATING_APPLICATION', 500)
     }
-    
-    res.json(event);
-  } catch (error) {
-    handleHttpError(res, error);
-  }
-};
+}
 
+async function applyToEvent(req, res) {
+    try {
+        const { id } = req.params
+        const sponsorId = req.user._id
 
-module.exports = {
-    createEvent,
-    getEvents,
-    getEventById,
-    getEventByName
+        const event = await eventsModel.findById(id)
+        if (req.user.role !== 'sponsor') return handleHttpError(res, "SOLO_LOS_SPONSORS_PUEDEN_PATROCINAR", 403);
+        if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
+        if (event.status !== 'published') return handleHttpError(res, 'EVENT_NOT_AVAILABLE', 400)
+
+        const alreadyApplied = event.sponsorship.sponsorsApplied
+            .some(app => app.sponsor.toString() === sponsorId.toString())
+        if (alreadyApplied) return handleHttpError(res, 'ALREADY_APPLIED', 409)
+
+        event.sponsorship.sponsorsApplied.push({
+            sponsor: sponsorId,
+            message: req.body.message ?? '',
+        })
+        await event.save()
+
+        return res.status(201).json({ success: true, message: 'Solicitud enviada correctamente' })
+    } catch (error) {
+        console.error('Error en applyToEvent:', error)
+        handleHttpError(res, 'ERROR_APPLYING_TO_EVENT', 500)
+    }
+}
+
+export { 
+    getEvents, 
+    getMyEvents, 
+    getEventById, 
+    getEventDashboard,
+    createEvent, 
+    updateEvent, 
+    deleteEvent, 
+    submitOnboarding, 
+    getInbox, 
+    updateApplication,
+    applyToEvent
 }

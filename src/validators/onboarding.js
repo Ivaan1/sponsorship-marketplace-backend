@@ -1,4 +1,4 @@
-const { z } = require("zod");
+import { z } from 'zod'
 
 const sponsorOnboardingSchema = z.object({
   sponsorProfile: z.object({
@@ -27,9 +27,5 @@ const sponsorOnboardingSchema = z.object({
   }),
 });
 
-// Para este MVP, el onboarding de creators es muy simple. Se puede expandir en el futuro.
-const creatorOnboardingSchema = z.object({
-    creatorProfile: z.object({}).passthrough() 
-});
 
-module.exports = { sponsorOnboardingSchema, creatorOnboardingSchema };
+export { sponsorOnboardingSchema }

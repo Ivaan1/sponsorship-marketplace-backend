@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose'
 
 // --- Sub-schemas ---
 
@@ -81,6 +81,7 @@ const ticketSchema = new mongoose.Schema({
   },
   price: { type: Number, default: 0 },
   availableQuantity: { type: Number },
+  soldQuantity: { type: Number, default: 0 },
   saleEnds: {
     reference: { type: String, enum: ["before_event", "before_start"] },
     amount: { type: Number },
@@ -206,6 +207,19 @@ const eventSchema = new mongoose.Schema(
 
       // ── Beneficios → tarjeta "#Visibilidad para la marca" ─────────────────
       perks: [{ type: String }],
+      collaborationTypes: [{
+        type: String,
+        enum: ["financial", "services", "brand_collaboration", "other"] // Valores internos para esos botones
+      }],
+      pitch: {
+        type: String,
+        trim: true
+      },
+      socialLinks: {
+        whatsapp: { type: String, trim: true },
+        instagram: { type: String, trim: true },
+        youtube: { type: String, trim: true },
+      },
 
       // ── Nivel de patrocinio → filtro "Nivel" ──────────────────────────────
       // NUEVO — opcional, no rompe documentos sin este campo
@@ -250,15 +264,24 @@ const eventSchema = new mongoose.Schema(
         message: { type: String },
         appliedAt: { type: Date, default: Date.now },
       }],
+
+      // ── Alcance geográfico → filtro "Alcance" ──
+      geographicScope: {
+        type: String,
+        enum: ["local", "regional", "national", "international"],
+      },
     },
 
-    status: {
+    status: { 
       type: String,
       enum: ["draft", "published", "cancelled", "finished"],
       default: "draft",
+    },
+    analytics: {
+        views: { type: Number, default: 0 }
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("events", eventSchema);
+export default mongoose.model('events', eventSchema)

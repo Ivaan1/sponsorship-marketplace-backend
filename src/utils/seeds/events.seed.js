@@ -1,15 +1,15 @@
-const mongoose = require('mongoose')
-const { faker, fakerES } = require('@faker-js/faker')
-require('dotenv').config()
+import mongoose from 'mongoose'
+import { faker, fakerES } from '@faker-js/faker'
+import dotenv from 'dotenv'
+import { eventsModel } from '../../models/index.js'
+import dbConnect from '../../config/mongo.js'
 
-const { eventsModel } = require('../../models')
-const dbConnect = require('../../config/mongo')
+dotenv.config()
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const categories = ['music', 'technology', 'gastronomy', 'culture', 'business', 'health', 'education', 'entertainment']
 const sponsorshipLevels = ['title', 'gold', 'silver', 'bronze', 'community']
-const eventStatuses = ['draft', 'published', 'cancelled', 'finished']
 const locationTypes = ['venue', 'online', 'tba']
 
 // ─── Nombres de eventos ────────────────────────────────────────────────────────
@@ -75,11 +75,14 @@ const generateAgendaDay = (baseDate) =>
 const generateTickets = () =>
     Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => {
         const type = faker.helpers.arrayElement(['paid', 'free', 'donation'])
+        const available = faker.number.int({ min: 50, max: 2000 });
+        const sold = faker.number.int({ min: 0, max: available });
         return {
             name: faker.helpers.arrayElement(['General', 'VIP', 'Early Bird', 'Student', 'Premium']),
             type,
             price: type === 'paid' ? faker.number.int({ min: 10, max: 500 }) : 0,
-            availableQuantity: faker.number.int({ min: 50, max: 2000 }),
+            availableQuantity: available,
+            soldQuantity: sold,
             saleEnds: faker.helpers.maybe(() => ({
                 reference: faker.helpers.arrayElement(['before_event', 'before_start']),
                 amount: faker.number.int({ min: 1, max: 72 }),
@@ -114,12 +117,15 @@ const generateCast = () =>
     }))
 
 const generateSponsorship = (category) => ({
-    isLookingForSponsors: faker.datatype.boolean(),
+    isLookingForSponsors: true,
+
     category,
+
     budget: {
         min: faker.number.int({ min: 500, max: 5000 }),
         max: faker.number.int({ min: 5000, max: 50000 }),
     },
+
     targetAudience: {
         ageRange: {
             min: faker.number.int({ min: 18, max: 25 }),
@@ -131,6 +137,7 @@ const generateSponsorship = (category) => ({
         ),
         expectedAttendees: faker.number.int({ min: 100, max: 10000 }),
     },
+
     perks: faker.helpers.arrayElements([
         'Logo en escenario',
         'Mención en redes sociales',
@@ -141,25 +148,48 @@ const generateSponsorship = (category) => ({
         'Entradas gratuitas',
         'Entrevista en streaming',
     ], faker.number.int({ min: 2, max: 5 })),
+
+    collaborationTypes: faker.helpers.arrayElements(
+        ['financial', 'services', 'brand_collaboration'],
+        faker.number.int({ min: 1, max: 3 })
+    ),
+
+    pitch: fakerES.lorem.paragraph(),
+
+    socialLinks: {
+        whatsapp: faker.phone.number(),
+        instagram: `https://instagram.com/${faker.internet.username()}`,
+        youtube: faker.helpers.maybe(() => `https://youtube.com/@${faker.internet.username()}`, { probability: 0.4 }),
+    },
+
     sponsorshipLevel: faker.helpers.arrayElement(sponsorshipLevels),
+
     digitalReach: {
         estimatedOnlineViewers: faker.number.int({ min: 1000, max: 100000 }),
-        streamingPlatforms: faker.helpers.arrayElements(['YouTube', 'Twitch', 'Instagram Live', 'TikTok Live'], 2),
+        streamingPlatforms: faker.helpers.arrayElements(
+            ['YouTube', 'Twitch', 'Instagram Live', 'TikTok Live'],
+            faker.number.int({ min: 1, max: 3 })
+        ),
         socialMediaImpressions: faker.number.int({ min: 5000, max: 500000 }),
         hasLivestream: faker.datatype.boolean(),
     },
+
     previousSponsors: Array.from({ length: faker.number.int({ min: 0, max: 3 }) }, () => ({
         name: faker.company.name(),
         logoUrl: faker.image.urlLoremFlickr({ category: 'business' }),
         year: faker.helpers.arrayElement([2022, 2023, 2024]),
     })),
-    sponsorshipStatus: faker.helpers.arrayElement(['open', 'closed', 'in_negotiation']),
-    sponsorsApplied: Array.from({ length: faker.number.int({ min: 0, max: 4 }) }, () => ({
-        sponsor: new mongoose.Types.ObjectId(),
+
+    sponsorshipStatus: 'open',
+
+    sponsorsApplied: Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
+        sponsor: new mongoose.Types.ObjectId('69ebc6fddda876708f3c020f'),
         status: faker.helpers.arrayElement(['pending', 'accepted', 'rejected']),
         message: fakerES.lorem.sentence(),
         appliedAt: faker.date.recent({ days: 60 }),
     })),
+
+    geographicScope: faker.helpers.arrayElement(['local', 'regional', 'national', 'international']),
 })
 
 // ─── Generador principal de evento ────────────────────────────────────────────
@@ -172,7 +202,6 @@ const generateEvent = (organizerId) => {
     const startTime = faker.date.future({ years: 1 })
     const endTime = new Date(startTime.getTime() + faker.number.int({ min: 1, max: 8 }) * 3600000)
 
-    // Agenda: array de arrays (un array por día/sesión)
     const agendaDays = Array.from(
         { length: faker.number.int({ min: 1, max: 3 }) },
         (_, i) => {
@@ -192,34 +221,43 @@ const generateEvent = (organizerId) => {
 
         eventType,
 
-        singleDate: eventType === 'single' ? { startTime, endTime } : undefined,
+        singleDate: eventType === 'single'
+            ? { startTime, endTime }
+            : undefined,
 
-        recurrence: eventType === 'recurring' ? {
-            frequency: faker.helpers.arrayElement(['daily', 'weekly', 'monthly']),
-            until: faker.date.future({ years: 1 }),
-            dayOfWeek: faker.helpers.maybe(() =>
-                faker.helpers.arrayElement(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']),
-                { probability: 0.5 }
-            ),
-            dayOfMonth: faker.helpers.maybe(() => faker.number.int({ min: 1, max: 28 }), { probability: 0.3 }),
-            schedules: Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () => {
-                const s = faker.date.future({ years: 1 })
-                const e = new Date(s.getTime() + faker.number.int({ min: 1, max: 6 }) * 3600000)
-                return { startTime: s, endTime: e }
-            }),
-        } : undefined,
+        recurrence: eventType === 'recurring'
+            ? {
+                frequency: faker.helpers.arrayElement(['daily', 'weekly', 'monthly']),
+                until: faker.date.future({ years: 1 }),
+                dayOfWeek: faker.helpers.maybe(
+                    () => faker.helpers.arrayElement(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']),
+                    { probability: 0.5 }
+                ),
+                dayOfMonth: faker.helpers.maybe(
+                    () => faker.number.int({ min: 1, max: 28 }),
+                    { probability: 0.3 }
+                ),
+                schedules: Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () => {
+                    const s = faker.date.future({ years: 1 })
+                    const e = new Date(s.getTime() + faker.number.int({ min: 1, max: 6 }) * 3600000)
+                    return { startTime: s, endTime: e }
+                }),
+            }
+            : undefined,
 
         location: {
             type: locType,
-            venue: locType === 'venue' ? {
-                name: faker.company.name(),
-                address1: faker.location.streetAddress(),
-                address2: faker.helpers.maybe(() => faker.location.secondaryAddress(), { probability: 0.3 }),
-                city: faker.location.city(),
-                state: faker.location.state(),
-                zipCode: faker.location.zipCode(),
-                country: faker.location.country(),
-            } : undefined,
+            venue: locType === 'venue'
+                ? {
+                    name: faker.company.name(),
+                    address1: faker.location.streetAddress(),
+                    address2: faker.helpers.maybe(() => faker.location.secondaryAddress(), { probability: 0.3 }),
+                    city: faker.location.city(),
+                    state: faker.location.state(),
+                    zipCode: faker.location.zipCode(),
+                    country: faker.location.country(),
+                }
+                : undefined,
             onlineUrl: locType === 'online' ? faker.internet.url() : undefined,
         },
 
@@ -227,7 +265,7 @@ const generateEvent = (organizerId) => {
             highlights: {
                 ageRestriction: faker.helpers.arrayElement([
                     'all_ages', '+12', '+16', '+18', '+21',
-                    'guardian_under_14', 'guardian_under_16', 'guardian_under_18', 'guardian_under_21'
+                    'guardian_under_14', 'guardian_under_16', 'guardian_under_18', 'guardian_under_21',
                 ]),
                 parking: faker.helpers.arrayElement(['free', 'paid', 'none']),
             },
@@ -245,7 +283,11 @@ const generateEvent = (organizerId) => {
 
         sponsorship: generateSponsorship(category),
 
-        status: faker.helpers.arrayElement(eventStatuses),
+        analytics: {
+            views: faker.number.int({ min: 100, max: 10000 }),
+        },
+
+        status: 'published',
     }
 }
 
@@ -258,7 +300,7 @@ const seed = async () => {
     console.log('🗑️  Eventos anteriores eliminados')
 
     // ⚠️ Reemplaza este ID por un ObjectId real de tu colección de usuarios
-    const fakeOrganizerId = '69bd3e73a2a65688cc7a9087'
+    const fakeOrganizerId = '69ebc5b72d24438dba8ccffc'
 
     const events = Array.from({ length: 50 }, () => generateEvent(fakeOrganizerId))
     await eventsModel.insertMany(events)

@@ -1,27 +1,51 @@
-const express = require('express');
-const router = express.Router();
+import { Router } from 'express'
+import validateSchema from '../middlewares/validator.js'
+import authMiddleware from '../middlewares/session.js'
+import { 
+  onboardingSchema, 
+  createEventSchema, 
+  updateEventSchema,
+  applyEventSchema,
+  updateApplicationSchema
+} from '../validators/events.js'
 
-const { getEvents, getEventById, getEventByName, createEvent } = require('../controllers/events')
+import {
+  getEvents,
+  getMyEvents,
+  getEventById,
+  getEventDashboard,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  submitOnboarding,
+  getInbox,
+  updateApplication,
+  applyToEvent,
+} from '../controllers/events.js'
 
- 
-// Catálogo con filtros y ranking
+const router = Router()
+
+// --- 1. Rutas de CONSULTA PÚBLICA (Catálogo) ---
 // GET /api/events?category=concert&sortBy=relevance&page=1
 router.get('/', getEvents)
 
-// ── Solo para pruebas ─────────────────────────────────────────────────────────
-// El squad del organizador lo reemplazará con su propia implementación.
-router.post('/', createEvent)
+// --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
+// IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
+router.get('/mine', authMiddleware, getMyEvents)
+router.get('/inbox', authMiddleware, getInbox)
 
-// Detalle de evento
-// GET /api/events/:id
-router.get('/:id', getEventById)
+// --- 3. Rutas por ID (Dinámicas) ---
+router.get('/:id', getEventById) // Vista pública 
+router.get('/:id/dashboard', authMiddleware, getEventDashboard) // Versión con más detalles para el panel de control del evento
 
-/**
- * @deprecated
- * @description Busca un evento por su nombre exacto.
- * @reason Obsoleto. Utilizar el endpoint principal `GET /api/events?q=nombre` 
- * que incluye el motor de búsqueda con ranking de relevancia.
- */
-router.get('/name/:name',getEventByName);
+// --- 4. Gestión de Eventos (Creación, Edición, Borrado) ---
+router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
+router.patch('/:id', authMiddleware, validateSchema(updateEventSchema), updateEvent)
+router.delete('/:id', authMiddleware, deleteEvent)
 
-module.exports = router;
+// --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
+router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
+router.post('/:id/apply', authMiddleware,validateSchema(applyEventSchema), applyToEvent)
+router.patch('/:id/applications/:appId', authMiddleware,validateSchema(updateApplicationSchema), updateApplication)
+
+export default router
