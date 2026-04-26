@@ -194,7 +194,6 @@ async function getEventById(req, res) {
       local: metrics.localImpact,
       international: metrics.internationalReach
     };
-    console.log('eventData:', eventData)
 
         if (event.status === 'published') {
             return res.status(200).json(eventData)
