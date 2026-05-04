@@ -18,7 +18,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // ← añad
 app.use("/api", require("./routes")); // Lee routes/index.js
 
 // PUERTO Y ARRANQUE
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
     console.log("Servidor corriendo en http://localhost:" + port);
