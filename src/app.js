@@ -4,10 +4,14 @@ import cors from 'cors'
 import swaggerUi from 'swagger-ui-express'
 import swaggerSpec from './config/swagger.js'
 import routes from './routes/index.js'
+import { generalLimiter } from './middlewares/rateLimiter.js'
 
 dotenv.config() 
 
 const app = express();
+
+// APLICACIÓN DE LIMITADOR GLOBAL (para todas las rutas)
+app.use(generalLimiter);
 
 // MIDDLEWARES GLOBALES
 app.use(cors());
