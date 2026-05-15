@@ -1,8 +1,10 @@
 import mongoose from 'mongoose'
 import { faker, fakerES } from '@faker-js/faker'
 import dotenv from 'dotenv'
-import { eventsModel } from '../../models/index.js'
+import { eventsModel, usersModel } from '../../models/index.js'
+const { encrypt } = await import('../handlePassword.js')
 import dbConnect from '../../config/mongo.js'
+import { fa } from 'zod/locales'
 
 dotenv.config()
 
@@ -75,8 +77,8 @@ const generateAgendaDay = (baseDate) =>
 const generateTickets = () =>
     Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => {
         const type = faker.helpers.arrayElement(['paid', 'free', 'donation'])
-        const available = faker.number.int({ min: 50, max: 2000 });
-        const sold = faker.number.int({ min: 0, max: available });
+        const available = faker.number.int({ min: 50, max: 2000 })
+        const sold = faker.number.int({ min: 0, max: available })
         return {
             name: faker.helpers.arrayElement(['General', 'VIP', 'Early Bird', 'Student', 'Premium']),
             type,
@@ -116,7 +118,7 @@ const generateCast = () =>
         },
     }))
 
-const generateSponsorship = (category) => ({
+const generateSponsorship = (category, sponsorId) => ({
     isLookingForSponsors: true,
 
     category,
@@ -182,8 +184,9 @@ const generateSponsorship = (category) => ({
 
     sponsorshipStatus: 'open',
 
+    // ✅ ID dinámico del sponsor recién creado
     sponsorsApplied: Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
-        sponsor: new mongoose.Types.ObjectId('69ebc6fddda876708f3c020f'),
+        sponsor: sponsorId,
         status: faker.helpers.arrayElement(['pending', 'accepted', 'rejected']),
         message: fakerES.lorem.sentence(),
         appliedAt: faker.date.recent({ days: 60 }),
@@ -194,7 +197,7 @@ const generateSponsorship = (category) => ({
 
 // ─── Generador principal de evento ────────────────────────────────────────────
 
-const generateEvent = (organizerId) => {
+const generateEvent = (organizerId, sponsorId) => {
     const category = faker.helpers.arrayElement(categories)
     const eventType = faker.helpers.arrayElement(['single', 'recurring'])
     const locType = faker.helpers.arrayElement(locationTypes)
@@ -211,7 +214,8 @@ const generateEvent = (organizerId) => {
     )
 
     return {
-        organizer: new mongoose.Types.ObjectId(organizerId),
+        // ✅ ID dinámico del organizer recién creado
+        organizer: organizerId,
 
         name: generateEventName(category),
         summary: fakerES.lorem.sentence({ min: 5, max: 20 }).slice(0, 140),
@@ -281,7 +285,7 @@ const generateEvent = (organizerId) => {
 
         tickets: generateTickets(),
 
-        sponsorship: generateSponsorship(category),
+        sponsorship: generateSponsorship(category, sponsorId),
 
         analytics: {
             views: faker.number.int({ min: 100, max: 10000 }),
@@ -291,21 +295,110 @@ const generateEvent = (organizerId) => {
     }
 }
 
-// ─── Seed ─────────────────────────────────────────────────────────────────────
+// ─── Creación de usuarios seed ────────────────────────────────────────────────
+
+const createSeedUsers = async () => {
+    const hashedPassword = await encrypt('12345678')
+
+    // Usuario creator
+    const organizer = await usersModel.create({
+        email: 'creator@seed.com',
+        password: hashedPassword,
+        role: 'creator',
+        onboardingCompleted: true,
+        name: fakerES.person.fullName(),
+        profilePicture: faker.image.avatar(),
+        bio: fakerES.lorem.paragraph(),
+        location: {
+            city: faker.location.city(),
+            country: faker.location.country(),
+        },
+        socialLinks: {
+                instagram: `https://instagram.com/${faker.internet.username()}`,
+                twitter: `https://twitter.com/${faker.internet.username()}`,
+                website: faker.internet.url(),
+        },
+        // Perfil específico de creator
+        creatorProfile: {
+            description: fakerES.lorem.paragraph(),
+            contactEmail: faker.internet.email(),
+        },
+    })
+
+    // Usuario sponsor
+    const sponsor = await usersModel.create({
+        email: 'sponsor@seed.com',
+        password: hashedPassword,
+        role: 'sponsor',
+        onboardingCompleted: true,
+        name: fakerES.person.fullName(),
+        profilePicture: faker.image.avatar(),
+        bio: fakerES.lorem.paragraph(),
+        location: {
+            city: faker.location.city(),
+            country: faker.location.country(),
+        },
+        socialLinks: {
+                instagram: `https://instagram.com/${faker.internet.username()}`,
+                twitter: `https://twitter.com/${faker.internet.username()}`,
+                website: faker.internet.url(),
+        },
+        // Perfil específico de sponsor
+        sponsorProfile: {
+            companyName: fakerES.company.name(),
+            industry: faker.helpers.arrayElement(["tech", "food", "fashion", "sports", "music", "finance", "health", "other"]),
+            companySize: faker.helpers.arrayElement(["startup", "pyme", "enterprise"]),
+            sponsorshipObjective: faker.helpers.arrayElement(['brand_awareness', 'lead_generation', 'pr_networking', 'csr']),
+            contributionType: faker.helpers.arrayElement(['money', 'services', 'in_kind', 'mixed']),
+            budget: {
+                min: faker.number.int({ min: 500, max: 5000 }),
+                max: faker.number.int({ min: 5000, max: 100000 }),
+            },
+            geographicScope: faker.helpers.arrayElement(['local', 'regional', 'national', 'international']),
+            brandValues: faker.helpers.arrayElements(['innovación', 'sostenibilidad', 'inclusión', 'calidad', 'diversidad'], faker.number.int({ min: 1, max: 3 })),
+            preferences: {
+                eventTypes: faker.helpers.arrayElements(['concert', 'conference', 'festival', 'sports', 'networking', 'other'], faker.number.int({ min: 1, max: 3 })),
+                targetAudience: {
+                    ageRange: {
+                        min: faker.number.int({ min: 18, max: 30 }),
+                        max: faker.number.int({ min: 31, max: 50 }),
+                    },
+                    location: faker.location.city(),
+                    interests: faker.helpers.arrayElements(['tech', 'music', 'sports', 'food', 'art', 'blockchain', 'startups', 'wellness'], faker.number.int({ min: 2, max: 5 })),
+                }
+            }
+        },
+    })
+
+    return { organizer, sponsor }
+}
+
+// ─── Seed principal ───────────────────────────────────────────────────────────
 
 const seed = async () => {
     await dbConnect()
 
+    // Limpiar colecciones
+    await usersModel.deleteMany()
+    console.log('🗑️  Usuarios anteriores eliminados')
+
     await eventsModel.deleteMany()
     console.log('🗑️  Eventos anteriores eliminados')
 
-    // ⚠️ Reemplaza este ID por un ObjectId real de tu colección de usuarios
-    const fakeOrganizerId = '69ebc5b72d24438dba8ccffc'
+    // Crear usuarios seed
+    const { organizer, sponsor } = await createSeedUsers()
+    console.log(`✅ Usuario organizer creado: ${organizer.email} (ID: ${organizer._id})`)
+    console.log(`✅ Usuario sponsor creado:   ${sponsor.email} (ID: ${sponsor._id})`)
 
-    const events = Array.from({ length: 50 }, () => generateEvent(fakeOrganizerId))
+    // Generar y guardar eventos usando los IDs dinámicos
+    const events = Array.from({ length: 50 }, () => generateEvent(organizer._id, sponsor._id))
     await eventsModel.insertMany(events)
 
     console.log('✅ 50 eventos creados correctamente')
+    console.log('\n📋 Credenciales de acceso:')
+    console.log(`   Organizer → email: creator@seed.com  |  password: 12345678`)
+    console.log(`   Sponsor   → email: sponsor@seed.com    |  password: 12345678`)
+
     process.exit(0)
 }
 
