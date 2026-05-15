@@ -204,7 +204,7 @@ async function getEventById(req, res) {
         if (!authHeader) return handleHttpError(res, 'NO_TOKEN_FOUND', 401)
 
         const token = authHeader.split(' ').pop()
-        const dataToken = await verifyToken(token)
+        const dataToken = verifyToken(token)
             
         const userId = dataToken._id || dataToken.id;
         if (!userId) return handleHttpError(res, 'INVALID_TOKEN', 401)
