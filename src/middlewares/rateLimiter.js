@@ -9,7 +9,8 @@ export const generalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos 
-  max: 20, // 20 intentos
+  //en test permitimos 500, en produccion solo 20
+  max: process.env.NODE_ENV === 'test' ? 500 : 20, // 20 intentos por IP cada 15 minutos
   message: {
     success: false,
     error: 'AUTH_THROTTLED',
