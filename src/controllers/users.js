@@ -42,32 +42,26 @@ const getUserById = async (req, res) => {
 const updateMe = async (req, res) => {
   try {
     const userId = req.user._id
-    const data = req.body
+    const userRole = req.user.role
 
-    if (req.user.role === 'creator' && data.sponsorProfile) {
+    const { role, email, password, _id, ...allowedData } = req.body
+
+    if (userRole === 'creator' && allowedData.sponsorProfile) {
       return handleHttpError(res, 'SPONSOR_PROFILE_NOT_ALLOWED_FOR_CREATOR', 400)
     }
 
-    if (req.user.role === 'sponsor' && data.creatorProfile) {
+    if (userRole === 'sponsor' && allowedData.creatorProfile) {
       return handleHttpError(res, 'CREATOR_PROFILE_NOT_ALLOWED_FOR_SPONSOR', 400)
     }
 
     const updatedUser = await usersModel.findByIdAndUpdate(
       userId,
-      data,
-      {
-        returnDocument: 'after',
-        runValidators: true
-      }
+      { $set: allowedData }, 
+      { returnDocument: 'after', runValidators: true }
     ).select('-password')
-
-    if (!updatedUser) {
-      return handleHttpError(res, 'USER_NOT_FOUND', 404)
-    }
 
     return res.status(200).json({
       status: 'success',
-      message: 'Perfil actualizado correctamente',
       user: updatedUser
     })
   } catch (error) {

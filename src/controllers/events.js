@@ -271,9 +271,11 @@ async function getEventDashboard(req, res) {
 
 async function createEvent(req, res) {
     try {
-        const eventData = req.body
-        eventData.organizer = req.user._id
-        eventData.status = "draft"
+        const eventData = { 
+            ...req.body, 
+            organizer: req.user._id, 
+            status: "draft" 
+        };
 
         const newEvent = await eventsModel.create(eventData)
         return res.status(201).json({ success: true, data: newEvent })
@@ -315,16 +317,18 @@ async function deleteEvent(req, res) {
 async function submitOnboarding(req, res) {
     try {
         const { id } = req.params
-        const sponsorshipData = req.body.sponsorship
         const event = await eventsModel.findById(id)
         if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
         if (event.organizer.toString() !== req.user._id.toString()) return handleHttpError(res, 'UNAUTHORIZED', 403)
 
-        sponsorshipData.isLookingForSponsors = true
-        sponsorshipData.sponsorshipStatus = "open"
+        const updatedSponsorship = {
+            ...req.body.sponsorship,
+            isLookingForSponsors: true,
+            sponsorshipStatus: "open"
+        };
 
         const updatedEvent = await eventsModel.findByIdAndUpdate(id, {
-            $set: { sponsorship: sponsorshipData, status: "published" }
+            $set: { sponsorship: updatedSponsorship, status: "published" }
         }, { returnDocument: 'after', runValidators: true })
 
         return res.status(200).json({ success: true, data: updatedEvent })
@@ -371,7 +375,6 @@ async function getInbox(req, res) {
 
 async function updateApplication(req, res) {
     try {
-        if (req.user.role !== 'creator') return handleHttpError(res, 'FORBIDDEN', 403)
         const { id, appId } = req.params
         const { status } = req.body
         if (!['accepted', 'rejected'].includes(status)) return handleHttpError(res, 'INVALID_STATUS', 400)
@@ -391,7 +394,9 @@ async function updateApplication(req, res) {
         let sponsorContact = null
         if (status === 'accepted') {
             const sponsor = await usersModel.findById(application.sponsor).select('name email sponsorProfile.companyName').lean()
-            sponsorContact = { name: sponsor.name, email: sponsor.email, companyName: sponsor.sponsorProfile?.companyName }
+            if (sponsor) {
+                sponsorContact = { name: sponsor.name, email: sponsor.email, companyName: sponsor.sponsorProfile?.companyName }
+            }
         }
         return res.status(200).json({ status, ...(sponsorContact && { sponsorContact }) })
     } catch (error) {
