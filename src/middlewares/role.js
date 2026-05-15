@@ -1,4 +1,4 @@
-import { handleHttpError } from "../utils/handleErrors";
+import { handleHttpError } from "../utils/handleErrors.js";
 
 const checkRole = (roles) => (req, res, next) => {
     try {
