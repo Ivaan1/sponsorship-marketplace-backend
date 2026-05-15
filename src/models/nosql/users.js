@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      //required: true,
+      required: true,
       trim: true,
     },
     email: {
@@ -22,6 +22,18 @@ const userSchema = new mongoose.Schema(
       enum: ["sponsor", "creator", "admin"],
       required: true,
     },
+    profilePicture: { type: String },
+    bio: { type: String },
+    location: {
+        city: { type: String },
+        country: { type: String },
+    },
+    socialLinks: {
+            instagram: String,
+            twitter: String,
+            website: String
+        },
+    
 
     // Solo relevante si role === "sponsor"
     sponsorProfile: {
@@ -66,15 +78,11 @@ const userSchema = new mongoose.Schema(
 
     // Solo relevante si role === "creator"
     creatorProfile: {
-      firstName: { type: String },
-      lastName: { type: String },
-      location: { type: String },
-      company: { type: String },
-      position: { type: String }, // Cargo
-      profileImage: { type: String }
+        contactEmail: String,    // Email de contacto público (distinto al de login o puede ser el mismo)
+        
     },
 
-    isVerified: { type: Boolean, default: false },
+    //isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     onboardingCompleted: { type: Boolean, default: false }
   

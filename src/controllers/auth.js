@@ -12,6 +12,7 @@ async function registerUser(req, res) {
 
         const user = await usersModel.create({ ...rest, password, onboardingCompleted: rest.role === 'creator' })
         const userFiltered = {
+            name: user.name,
             email: user.email,
             role: user.role,
             onboardingCompleted: user.onboardingCompleted

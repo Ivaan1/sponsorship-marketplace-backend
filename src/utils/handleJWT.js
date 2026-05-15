@@ -8,7 +8,9 @@ function tokenSign(user){
     const sign = jwt.sign(
         {
             _id: user._id,
-            role: user.role
+            role: user.role,
+            name: user.name,
+            profilePicture: user.profilePicture
         },
         JWT_SECRET,
         {
