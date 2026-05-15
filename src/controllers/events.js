@@ -406,7 +406,7 @@ async function applyToEvent(req, res) {
         const sponsorId = req.user._id
 
         const event = await eventsModel.findById(id)
-        if (req.user.role !== 'sponsor') return handleHttpError(res, "SOLO_LOS_SPONSORS_PUEDEN_PATROCINAR", 403);
+        
         if (!event) return handleHttpError(res, 'EVENT_NOT_FOUND', 404)
         if (event.status !== 'published') return handleHttpError(res, 'EVENT_NOT_AVAILABLE', 400)
 
