@@ -1,5 +1,5 @@
 import request from 'supertest'
-import app from './helpers/app.js'
+import app from '../src/app.js'
 import { connect, disconnect, clearDatabase } from './helpers/db.js'
 
 beforeAll(async () => await connect())
