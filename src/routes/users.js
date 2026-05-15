@@ -8,8 +8,7 @@ import checkRole from '../middlewares/role.js'
 
 const router = express.Router()
 
-router.get('/', authMiddleware,checkRole(['admin']), getUsers);
-
+router.get('/', authMiddleware, getUsers); //checkRole(['admin']) se implementará en la siguiente iteración
 router.get('/me', authMiddleware, getMe);
 
 router.patch('/me', authMiddleware, validatorMiddleware(updateMeSchema), updateMe);

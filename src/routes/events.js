@@ -34,7 +34,7 @@ router.get('/', getEvents)
 // --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
 // IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
 router.get('/mine', authMiddleware, checkRole(['creator']), getMyEvents)
-router.get('/inbox', authMiddleware, checkRole(['creator']), getInbox)
+router.get('/inbox', authMiddleware, checkRole(['creator', 'sponsor']), getInbox)
 
 // --- 3. Rutas por ID (Dinámicas) ---
 router.get('/:id', getEventById) // Vista pública 
