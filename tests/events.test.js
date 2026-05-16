@@ -9,9 +9,10 @@ afterAll(async () => await disconnect())
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function registerAndLogin(role = 'sponsor') {
+  const name = role === 'sponsor' ? 'Test Sponsor' : 'Test Creator'
   const email = `${role}.${Date.now()}.${Math.floor(Math.random() * 10000)}@test.com`
   const password = 'password123'
-  await request(app).post('/api/auth/register').send({ email, password, role })
+  await request(app).post('/api/auth/register').send({ email, password, role, name })
   const res = await request(app).post('/api/auth/login').send({ email, password })
   return { token: res.body.token, user: res.body.user }
 }

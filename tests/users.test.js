@@ -9,11 +9,12 @@ afterAll(async () => await disconnect())
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function createUser(role = 'sponsor', suffix = '') {
+  const name = role === 'sponsor' ? 'Test Sponsor' : 'Test Creator'
   const email = `${role}${suffix}@test.com`
   const password = 'password123'
   const reg = await request(app)
     .post('/api/auth/register')
-    .send({ email, password, role })
+    .send({ email, password, role, name })
   const login = await request(app)
     .post('/api/auth/login')
     .send({ email, password })

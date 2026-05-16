@@ -8,12 +8,14 @@ afterAll(async () => await disconnect())
  
  
 const validSponsor = {
+  name : 'Test Sponsor',
   email: 'sponsor@test.com',
   password: 'password123',
   role: 'sponsor',
 }
  
 const validCreator = {
+  name : 'Test Creator',
   email: 'creator@test.com',
   password: 'password123',
   role: 'creator',
