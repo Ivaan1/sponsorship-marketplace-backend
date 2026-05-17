@@ -1,6 +1,6 @@
 import { eventsModel, usersModel } from '../models/index.js'
 import { handleHttpError } from '../utils/handleErrors.js'
-import { rankEvents } from '../utils/rankEvents.js'
+import EventRankService from '../services/rankEvents.js'
 import { verifyToken } from '../utils/handleJWT.js'
 import mongoose from 'mongoose'
 
@@ -65,7 +65,7 @@ async function getEvents(req, res) {
 
         let ranked
         if (sortBy === 'relevance') {
-            ranked = rankEvents(events, sponsor)
+            ranked = EventRankService.rankEvents(events, sponsor)
         } else if (sortBy === 'attendees') {
             ranked = [...events].sort((a, b) =>
                 (b.sponsorship?.targetAudience?.expectedAttendees ?? 0) -
