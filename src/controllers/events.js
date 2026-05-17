@@ -377,7 +377,7 @@ async function getInbox(req, res) {
                 .lean()
 
             const inbox = events.flatMap(event => (event.sponsorship?.sponsorsApplied ?? []).map(app => ({
-                eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt,
+                eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt, message: app.message ?? 'Sin mensaje adjunto',
                 sponsor: { id: app.sponsor?._id, name: app.sponsor?.name, companyName: app.sponsor?.sponsorProfile?.companyName }
             })))
             inbox.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
@@ -390,7 +390,7 @@ async function getInbox(req, res) {
             const inbox = events.flatMap(event => {
                 const myApps = (event.sponsorship?.sponsorsApplied ?? []).filter(app => app.sponsor.toString() === _id.toString() && app.status !== 'rejected')
                 return myApps.map(app => ({
-                    eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt,
+                    eventId: event._id, eventName: event.name, applicationId: app._id, status: app.status, appliedAt: app.appliedAt, message: app.message ?? 'Sin mensaje adjunto',
                     creatorContact: app.status === 'accepted' ? { name: event.organizer?.name, email: event.organizer?.email } : null
                 }))
             })
