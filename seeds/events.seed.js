@@ -49,7 +49,7 @@ const generateEventName = (category) => {
 
 const generateMedia = (category) => ({
     // Forzamos a que las imágenes tengan un tamaño fijo de 800x450 (proporción perfecta 16:9)
-    images: Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () => ({
+    images: Array.from({ length: faker.number.int({ min: 3, max: 4 }) }, () => ({
         url: faker.image.urlLoremFlickr({ 
             width: 800, 
             height: 450, 
