@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 import { faker, fakerES } from '@faker-js/faker'
 import dotenv from 'dotenv'
-import { eventsModel, usersModel } from '../../models/index.js'
-const { encrypt } = await import('../handlePassword.js')
-import dbConnect from '../../config/mongo.js'
+import { eventsModel, usersModel } from '../src/models/index.js'
+const { encrypt } = await import('../src/utils/handlePassword.js')
+import dbConnect from '../src/config/mongo.js'
 import { fa } from 'zod/locales'
 
 dotenv.config()
@@ -48,8 +48,13 @@ const generateEventName = (category) => {
 // ─── Generadores de sub-documentos ────────────────────────────────────────────
 
 const generateMedia = (category) => ({
+    // Forzamos a que las imágenes tengan un tamaño fijo de 800x450 (proporción perfecta 16:9)
     images: Array.from({ length: faker.number.int({ min: 1, max: 4 }) }, () => ({
-        url: faker.image.urlLoremFlickr({ category }),
+        url: faker.image.urlLoremFlickr({ 
+            width: 800, 
+            height: 450, 
+            category: category 
+        }),
         size: faker.number.int({ min: 1000, max: 5000 }),
         format: faker.helpers.arrayElement(['jpeg', 'png']),
     })),
@@ -391,7 +396,7 @@ const seed = async () => {
     console.log(`✅ Usuario sponsor creado:   ${sponsor.email} (ID: ${sponsor._id})`)
 
     // Generar y guardar eventos usando los IDs dinámicos
-    const events = Array.from({ length: 50 }, () => generateEvent(organizer._id, sponsor._id))
+    const events = Array.from({ length: 100 }, () => generateEvent(organizer._id, sponsor._id))
     await eventsModel.insertMany(events)
 
     console.log('✅ 50 eventos creados correctamente')

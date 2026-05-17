@@ -88,9 +88,33 @@ async function getEvents(req, res) {
         const total = ranked.length
         const pages = Math.ceil(total / safeLimit)
         const start = (safePage - 1) * safeLimit
-        const paginated = ranked.slice(start, start + safeLimit)
+        const paginated = ranked.slice(start, start + safeLimit).map(event => {
+            return {
+                _id: event._id,
+                name: event.name,
+                summary: event.summary,
+                media: event.media,
+                organizer: event.organizer,
+                
+                sponsorship: {
+                    category: event.sponsorship?.category,
+                    tags: event.sponsorship?.tags || [],
+                    targetAudience: {
+                        expectedAttendees: event.sponsorship?.targetAudience?.expectedAttendees ?? 0
+                    }
+                },
+                
+                _score: event._score ?? null 
+            }
+        })
 
-    return res.status(200).json({ data: paginated, total, page: safePage, pages, limit: safeLimit })
+        return res.status(200).json({ 
+            data: paginated, 
+            total, 
+            page: safePage, 
+            pages, 
+            limit: safeLimit 
+        })
 
   } catch (error) {
     console.error('Error en getEvents:', error)
