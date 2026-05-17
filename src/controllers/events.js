@@ -95,13 +95,19 @@ async function getEvents(req, res) {
                 summary: event.summary,
                 media: event.media,
                 organizer: event.organizer,
+                status: event.status,
                 
                 sponsorship: {
                     category: event.sponsorship?.category,
                     tags: event.sponsorship?.tags || [],
                     targetAudience: {
                         expectedAttendees: event.sponsorship?.targetAudience?.expectedAttendees ?? 0
-                    }
+                    },
+                    budget: {
+                        min: event.sponsorship?.budget?.min ?? 0,
+                        max: event.sponsorship?.budget?.max ?? 0,
+                    },
+                    isLookingForSponsors: event.sponsorship?.isLookingForSponsors ?? true
                 },
                 
                 _score: event._score ?? null 
