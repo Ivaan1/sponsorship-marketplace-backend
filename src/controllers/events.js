@@ -201,7 +201,7 @@ async function getEventById(req, res) {
       .findByIdAndUpdate(
         req.params.id,
         { $inc: { "analytics.views": 1 } },
-        { new: true }
+        { returnDocument: 'after' }
       )
       .populate('organizer', 'name email');
 
