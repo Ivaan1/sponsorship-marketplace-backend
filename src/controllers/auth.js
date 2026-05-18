@@ -4,17 +4,6 @@ import { usersModel } from '../models/index.js'
 import { tokenSign } from '../utils/handleJWT.js'
 import { encrypt, compare } from '../utils/handlePassword.js'
 
-//solo para pruebas, luego se eliminará 
-async function createUser(req, res) {
-    try {
-        const { body } = req;
-        const data = await usersModel.create(body);
-        res.status(201).json(data);
-    } catch (error) {
-        console.error('Error creando el usuario:', error);
-        handleHttpError(res, error);
-    }
-}
 
 async function registerUser(req, res) {
     try {
@@ -23,6 +12,7 @@ async function registerUser(req, res) {
 
         const user = await usersModel.create({ ...rest, password, onboardingCompleted: rest.role === 'creator' })
         const userFiltered = {
+            name: user.name,
             email: user.email,
             role: user.role,
             onboardingCompleted: user.onboardingCompleted
@@ -71,4 +61,4 @@ async function loginUser(req, res) {
     }
 }
 
-export { createUser, registerUser, loginUser }
+export { registerUser, loginUser }

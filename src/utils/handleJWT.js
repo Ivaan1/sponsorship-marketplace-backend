@@ -8,24 +8,36 @@ function tokenSign(user){
     const sign = jwt.sign(
         {
             _id: user._id,
-            role: user.role
+            role: user.role,
+            name: user.name,
+            profilePicture: user.profilePicture
         },
         JWT_SECRET,
         {
-            expiresIn: "120d" //cambiar a 7
+            expiresIn: "7d" 
         }
     )
     return sign
 }
 
+/**
+ * Función de verificación de JWT.
+ * TODO: En la futura siguiente iteración, unificar con la lógica de recovery 
+ * y manejar excepciones globales para evitar retornos nulos.
+ */
 function verifyToken(tokenJwt){
     try {
         return jwt.verify(tokenJwt, JWT_SECRET)
-    } catch(e) {
-        console.error('Error en verifyToken:', e)
+    } catch(error) {
+        throw new Error("INVALID_OR_EXPIRED_TOKEN")
     }
 }
 
+// =============================================================================
+// FUTURAS IMPLEMENTACIONES (BACKLOG)
+// Los siguientes métodos se unificarán en el servicio de autenticación global
+// una vez se implemente el flujo de recuperación de contraseña/OAuth.
+// =============================================================================
 
 function tokenSignRecovery(user){
     return jwt.sign(

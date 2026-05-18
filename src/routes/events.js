@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import validateSchema from '../middlewares/validator.js'
 import authMiddleware from '../middlewares/session.js'
+import checkRole from '../middlewares/role.js'
+
 import { 
   onboardingSchema, 
   createEventSchema, 
@@ -31,21 +33,21 @@ router.get('/', getEvents)
 
 // --- 2. Rutas PRIVADAS / ESPECÍFICAS ---
 // IMPORTANTE: Deben ir antes de '/:id' para que Express no las confunda con un ID.
-router.get('/mine', authMiddleware, getMyEvents)
-router.get('/inbox', authMiddleware, getInbox)
+router.get('/mine', authMiddleware, checkRole(['creator']), getMyEvents)
+router.get('/inbox', authMiddleware, checkRole(['creator', 'sponsor']), getInbox)
 
 // --- 3. Rutas por ID (Dinámicas) ---
 router.get('/:id', getEventById) // Vista pública 
-router.get('/:id/dashboard', authMiddleware, getEventDashboard) // Versión con más detalles para el panel de control del evento
+router.get('/:id/dashboard', authMiddleware, checkRole(['creator']), getEventDashboard) // Versión con más detalles para el panel de control del evento
 
 // --- 4. Gestión de Eventos (Creación, Edición, Borrado) ---
-router.post('/', authMiddleware, validateSchema(createEventSchema), createEvent)
-router.patch('/:id', authMiddleware, validateSchema(updateEventSchema), updateEvent)
-router.delete('/:id', authMiddleware, deleteEvent)
+router.post('/', authMiddleware,checkRole(['creator']), validateSchema(createEventSchema), createEvent)
+router.patch('/:id', authMiddleware, checkRole(['creator']), validateSchema(updateEventSchema), updateEvent)
+router.delete('/:id', authMiddleware, checkRole(['creator']), deleteEvent)
 
 // --- 5. Flujos de Negocio (Onboarding y Aplicaciones) ---
-router.patch('/:id/onboarding', authMiddleware, validateSchema(onboardingSchema), submitOnboarding)
-router.post('/:id/apply', authMiddleware,validateSchema(applyEventSchema), applyToEvent)
-router.patch('/:id/applications/:appId', authMiddleware,validateSchema(updateApplicationSchema), updateApplication)
+router.patch('/:id/onboarding', authMiddleware, checkRole(['creator']), validateSchema(onboardingSchema), submitOnboarding)
+router.post('/:id/apply', authMiddleware,checkRole(['sponsor']), validateSchema(applyEventSchema), applyToEvent)
+router.patch('/:id/applications/:appId', authMiddleware,checkRole(['creator']), validateSchema(updateApplicationSchema), updateApplication)
 
 export default router

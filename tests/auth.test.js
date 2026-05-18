@@ -1,5 +1,5 @@
 import request from 'supertest'
-import app from './helpers/app.js'
+import app from '../src/app.js'
 import { connect, disconnect, clearDatabase } from './helpers/db.js'
  
 beforeAll(async () => await connect())
@@ -8,12 +8,14 @@ afterAll(async () => await disconnect())
  
  
 const validSponsor = {
+  name : 'Test Sponsor',
   email: 'sponsor@test.com',
   password: 'password123',
   role: 'sponsor',
 }
  
 const validCreator = {
+  name : 'Test Creator',
   email: 'creator@test.com',
   password: 'password123',
   role: 'creator',
