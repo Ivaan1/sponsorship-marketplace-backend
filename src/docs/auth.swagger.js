@@ -2,14 +2,18 @@
  * @swagger
  * tags:
  *   name: Auth
- *   description: Endpoints de autenticación
+ *   description: Registro e inicio de sesión
  */
 
 /**
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Registra un nuevo usuario
+ *     summary: Registrar nuevo usuario
+ *     description: |
+ *       Crea un usuario y devuelve JWT.
+ *       Los creators tienen onboardingCompleted true al registrarse.
+ *       Los sponsors deben completar PATCH /users/onboarding después.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -22,20 +26,30 @@
  *               - password
  *               - role
  *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: Juan Pérez
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: sponsor@mail.com
  *               password:
  *                 type: string
+ *                 minLength: 8
  *                 example: "12345678"
  *               role:
  *                 type: string
  *                 enum: [sponsor, creator]
  *     responses:
  *       201:
- *         description: Usuario registrado correctamente
+ *         description: Usuario registrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthTokenResponse'
  *       400:
- *         description: Error de validación
+ *         description: Validación fallida o email duplicado
  *       500:
  *         description: Error interno
  */
@@ -44,7 +58,7 @@
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Login de usuario
+ *     summary: Iniciar sesión
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -58,6 +72,7 @@
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: sponsor@mail.com
  *               password:
  *                 type: string
@@ -65,6 +80,14 @@
  *     responses:
  *       200:
  *         description: Login correcto
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthTokenResponse'
  *       401:
- *         description: Credenciales incorrectas
+ *         description: Contraseña incorrecta
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error interno
  */
